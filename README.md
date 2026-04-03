@@ -2,11 +2,6 @@
 
 Personal shell bootstrap for Zsh.
 
-## Files
-
-- `nadrbomz.sh`
-- `zshrc_zero`
-
 ## What it does
 
 - installs Oh-My-Zsh if missing
@@ -18,10 +13,21 @@ Personal shell bootstrap for Zsh.
 ## One-line install
 
 Generic:
-curl -fsSL https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.sh | sh
 
-FreeBSD without curl:
+```sh
+curl -fsSL https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.sh | sh
+```
+
+FreeBSD without `curl`:
+
+```sh
 fetch -q -o - https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.sh | sh
+```
+
+## Files
+
+- `nadrbomz.sh` - bootstrap
+- `zshrc_zero` - my default config
 
 ## License
 

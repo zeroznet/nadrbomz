@@ -23,3 +23,7 @@ curl -fsSL https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.sh 
 FreeBSD without curl:
 fetch -q -o - https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.sh | sh
 
+
+## License
+
+Licensed under the BSD-2-Clause license. See LICENSE.

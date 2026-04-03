@@ -95,7 +95,7 @@ source $ZSH/oh-my-zsh.sh
 
 # Prompt
 setopt PROMPT_SUBST
-PROMPT='%{$fg_bold[magenta]%}%m%{$reset_color%} at %{$fg_bold[blue]%}%~%{$reset_color%} %(!.%{$fg[red]%}.%{$fg[green]%})>%{$reset_color%} '
+PROMPT='%{$fg_bold[magenta]%}%n@%m%{$reset_color%} at %{$fg_bold[blue]%}%~%{$reset_color%} %(!.%{$fg[red]%}.%{$fg[green]%})>%{$reset_color%} '
 RPROMPT=''
 
 # Accept autosuggestion with Ctrl+E

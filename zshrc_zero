@@ -1,0 +1,204 @@
+# If you come from bash you might have to change your $PATH.
+typeset -U path PATH
+[[ -d "$HOME/bin"  ]] && path+=("$HOME/bin")
+[[ -d "$HOME/sbin" ]] && path+=("$HOME/sbin")
+export PATH
+
+# Path to your Oh My Zsh installation.
+export ZSH="$HOME/.oh-my-zsh"
+
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time Oh My Zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
+# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+ZSH_THEME="minimal"
+
+# Set list of themes to pick from when loading at random
+# Setting this variable when ZSH_THEME=random will cause zsh to load
+# a theme from this variable instead of looking in $ZSH/themes/
+# If set to an empty array, this variable will have no effect.
+# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+
+# Uncomment the following line to use case-sensitive completion.
+# CASE_SENSITIVE="true"
+
+# Uncomment the following line to use hyphen-insensitive completion.
+# Case-sensitive completion must be off. _ and - will be interchangeable.
+# HYPHEN_INSENSITIVE="true"
+
+# Uncomment one of the following lines to change the auto-update behavior
+# zstyle ':omz:update' mode disabled  # disable automatic updates
+# zstyle ':omz:update' mode auto      # update automatically without asking
+# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
+
+# Uncomment the following line to change how often to auto-update (in days).
+# zstyle ':omz:update' frequency 13
+
+# Uncomment the following line if pasting URLs and other text is messed up.
+# DISABLE_MAGIC_FUNCTIONS="true"
+
+# Uncomment the following line to disable colors in ls.
+# DISABLE_LS_COLORS="true"
+
+# Uncomment the following line to disable auto-setting terminal title.
+# DISABLE_AUTO_TITLE="true"
+
+# Uncomment the following line to enable command auto-correction.
+ENABLE_CORRECTION="true"
+
+# Uncomment the following line to display red dots whilst waiting for completion.
+# You can also set it to another string to have that shown instead of the default red dots.
+# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
+# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
+# COMPLETION_WAITING_DOTS="true"
+
+# Uncomment the following line if you want to disable marking untracked files
+# under VCS as dirty. This makes repository status check for large repositories
+# much, much faster.
+# DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Uncomment the following line if you want to change the command execution time
+# stamp shown in the history command output.
+# You can set one of the optional three formats:
+# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
+# or set a custom format using the strftime function format specifications,
+# see 'man strftime' for details.
+# HIST_STAMPS="mm/dd/yyyy"
+
+# Would you like to use another custom folder than $ZSH/custom?
+# ZSH_CUSTOM=/path/to/new-custom-folder
+
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+case "$OSTYPE" in
+  cygwin*|msys*)
+    plugins=(colored-man-pages)
+    DISABLE_AUTO_TITLE="true"
+    ;;
+  *)
+    plugins=(zsh-autosuggestions colored-man-pages)
+    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=5'
+    ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+    ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+    ;;
+esac
+
+# Make it more insecure to allow root using same rc files.
+ZSH_DISABLE_COMPFIX=true
+
+source $ZSH/oh-my-zsh.sh
+
+# User configuration
+
+# Prompt
+setopt PROMPT_SUBST
+PROMPT='%{$fg_bold[magenta]%}%m%{$reset_color%} at %{$fg_bold[blue]%}%~%{$reset_color%} %(!.%{$fg[red]%}.%{$fg[green]%})>%{$reset_color%} '
+RPROMPT=''
+
+# Accept autosuggestion with Ctrl+E
+if (( $+widgets[autosuggest-accept] )); then
+  bindkey '^E' autosuggest-accept
+fi
+
+# You may need to manually set your language environment
+export LANG="${LANG:-en_US.UTF-8}"
+
+# Preferred editor for local and remote sessions
+if [[ -n $SSH_CONNECTION ]]; then
+  export EDITOR='nvim'
+else
+  export EDITOR='nvim'
+fi
+
+# Compilation flags
+export ARCHFLAGS="-arch $(uname -m)"
+
+# Disable beeping
+setopt NO_BEEP
+
+# LS_COLORS
+case "$OSTYPE" in
+  freebsd*)
+    export CLICOLOR=1
+    export LSCOLORS="Exfxcxdxbxegedabagacad"
+    ;;
+  linux*|cygwin*|msys*)
+    export LS_COLORS="di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43"
+    ;;
+esac
+
+# Pager
+export PAGER=less
+
+# Use FTP passive mode
+export FTP_PASSIVE_MODE=1
+
+# Disable less history
+export LESSHISTFILE=/dev/null
+
+# Set umask based on the user
+if [[ $USER == root ]]; then
+    umask 022
+else
+    umask 077
+fi
+
+# Create and set temp for all users
+if [[ ! -d "$HOME/tmp" ]]; then
+    mkdir -p "$HOME/tmp"
+fi
+export TMPDIR="$HOME/tmp"
+
+# Disable history if ~/incognito_shell exists
+if [[ -f "$HOME/incognito_shell" ]]; then
+    unset HISTFILE
+    setopt HIST_IGNORE_ALL_DUPS
+    setopt SHARE_HISTORY
+    setopt HIST_NO_STORE
+fi
+
+# Check if ~/.ssh/keychain-enabled exists and execute keychain commands
+if [[ -f "$HOME/.ssh/keychain_enabled" ]] && command -v keychain >/dev/null 2>&1; then
+    keychain_args=$(cat "$HOME/.ssh/keychain_enabled")
+    keychain -q $keychain_args
+    [[ -f "$HOME/.keychain/${HOST}-sh" ]] && . "$HOME/.keychain/${HOST}-sh"
+fi
+
+# Roubi config
+alias e='nvim'
+alias lh='ssh localhost.sk -p 443'
+alias s='sudo su -'
+alias si='sudo -i'
+alias ss='sudo -s'
+alias su='su -'
+
+if [[ "$HOST" == "WORKPC" ]]; then
+  alias wcd='cd "/mnt/c/Documents and Settings/rbopko"'
+  if command -v kubectl >/dev/null 2>&1; then
+    alias k='kubectl'
+    alias kn='kubectl ns'
+    alias kubens='kubectl ns'
+    alias kc='kubectl ctx'
+    alias kubectx='kubectl ctx'
+    source <(kubectl completion zsh)
+  fi
+  export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+  export AZURE_CLI_DISABLE_CONNECTION_VERIFICATION=anycontent
+else
+  unset MAILCHECK
+fi
+
+# Set personal aliases, overriding those provided by Oh My Zsh libs,
+# plugins, and themes. Aliases can be placed here, though Oh My Zsh
+# users are encouraged to define aliases within a top-level file in
+# the $ZSH_CUSTOM folder, with .zsh extension. Examples:
+# - $ZSH_CUSTOM/aliases.zsh
+# - $ZSH_CUSTOM/macos.zsh
+# For a full list of active aliases, run `alias`.
+#
+# Example aliases
+# alias zshconfig="mate ~/.zshrc"
+# alias ohmyzsh="mate ~/.oh-my-zsh"

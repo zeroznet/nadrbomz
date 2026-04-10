@@ -4,6 +4,9 @@
 set -eu
 
 ZSHRC_URL="https://raw.githubusercontent.com/zeroznet/nadrbomz/main/zshrc_zero"
+SCREENRC_URL="https://raw.githubusercontent.com/zeroznet/nadrbomz/main/screenrc_zero"
+NVIM_INIT_URL="https://raw.githubusercontent.com/zeroznet/nadrbomz/main/init.vim_zero"
+
 OHMYZSH_DIR="${HOME}/.oh-my-zsh"
 ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-${OHMYZSH_DIR}/custom}"
 AUTOSUGGEST_DIR="${ZSH_CUSTOM_DIR}/plugins/zsh-autosuggestions"
@@ -77,22 +80,35 @@ sync_git_repo() {
   fi
 }
 
-deploy_zshrc() {
-  tmp_zshrc=$(mktemp "${TMPDIR:-/tmp}/zshrc.XXXXXX")
-  trap 'rm -f "${tmp_zshrc}"' EXIT HUP INT TERM
+deploy_file() {
+  url="$1"
+  target="$2"
+  label="$3"
 
-  log "Downloading .zshrc from GitHub..."
-  download_file "${ZSHRC_URL}" "${tmp_zshrc}"
+  tmp_file=$(mktemp "${TMPDIR:-/tmp}/dotfile.XXXXXX")
+  trap 'rm -f "${tmp_file}"' EXIT HUP INT TERM
 
-  if [ -f "${HOME}/.zshrc" ] || [ -L "${HOME}/.zshrc" ]; then
-    backup="${HOME}/.zshrc.bak.$(date +%Y%m%d%H%M%S)"
-    cp -p "${HOME}/.zshrc" "${backup}"
-    log "Backed up existing .zshrc to ${backup}"
+  log "Downloading ${label} from GitHub..."
+  download_file "${url}" "${tmp_file}"
+
+  target_dir=$(dirname "${target}")
+  mkdir -p "${target_dir}"
+
+  if [ -f "${target}" ] || [ -L "${target}" ]; then
+    backup="${target}.bak.$(date +%Y%m%d%H%M%S)"
+    cp -p "${target}" "${backup}"
+    log "Backed up existing ${label} to ${backup}"
   fi
 
-  mv "${tmp_zshrc}" "${HOME}/.zshrc"
+  mv "${tmp_file}" "${target}"
   trap - EXIT HUP INT TERM
-  log "Installed ${HOME}/.zshrc"
+  log "Installed ${target}"
+}
+
+deploy_dotfiles() {
+  deploy_file "${ZSHRC_URL}" "${HOME}/.zshrc" ".zshrc"
+  deploy_file "${SCREENRC_URL}" "${HOME}/.screenrc" ".screenrc"
+  deploy_file "${NVIM_INIT_URL}" "${HOME}/.config/nvim/init.vim" "init.vim"
 }
 
 main() {
@@ -108,7 +124,7 @@ main() {
   mkdir -p "${ZSH_CUSTOM_DIR}/plugins"
   sync_git_repo "${AUTOSUGGEST_REPO}" "${AUTOSUGGEST_DIR}" "zsh-autosuggestions"
 
-  deploy_zshrc
+  deploy_dotfiles
 
   log "Done."
   log "Run: exec zsh"

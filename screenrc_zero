@@ -1,0 +1,34 @@
+# ~/.screenrc
+#
+# Minimal cool default:
+# stay out of the way, keep old-school behavior,
+# and still handle modern UTF-8 / 256-color terminals sanely.
+
+# No startup banner.
+startup_message off
+
+# Enough history to be useful, still modest.
+defscrollback 10000
+
+# Modern text/color baseline.
+defutf8 on
+term screen-256color
+defbce on
+
+# Keep your preferred behavior:
+# do not jump in and out of the terminal's alternate screen buffer.
+# This keeps full-screen apps from messing with the visible terminal scrollback.
+termcapinfo xterm* ti@:te@
+termcapinfo rxvt*  ti@:te@
+
+# Quiet, predictable session behavior.
+vbell off
+autodetach on
+
+# New windows start with your current shell.
+shell -$SHELL
+
+# Logging timestamps.
+# Only matters when logging is actually enabled for a window.
+logtstamp on
+logtstamp after 1

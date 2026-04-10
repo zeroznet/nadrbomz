@@ -1,0 +1,10 @@
+" Don't fuck up with the mouse
+set mouse=
+" Highlight trailing spaces
+highlight TrailingSpace ctermbg=red guibg=red
+match TrailingSpace /\s\+$/
+" Don't fuck up o
+augroup NoVimCommentContinuation
+  autocmd!
+  autocmd FileType vim setlocal formatoptions-=r formatoptions-=o formatoptions-=c comments=
+augroup END

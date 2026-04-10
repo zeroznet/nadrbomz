@@ -1,4 +1,3 @@
-# ~/.screenrc
 #
 # Minimal cool default:
 # stay out of the way, keep old-school behavior,
@@ -32,3 +31,7 @@ shell -$SHELL
 # Only matters when logging is actually enabled for a window.
 logtstamp on
 logtstamp after 1
+
+# Status bar.
+hardstatus alwayslastline
+hardstatus string '%{2;0}[%{+b10;0}%H%{-}][%= %{7;0}%?%-Lw%?%{+9;0}(%{+15;0}%n%f %t%?(%u)%?%{-})%{-} ^H%?%+Lw%?%= %{-}]%{+b14;0}[%m/%d/%y %c]%{-}%{-}'

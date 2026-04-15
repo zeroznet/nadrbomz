@@ -3,9 +3,13 @@
 
 set -eu
 
-ZSHRC_URL="https://raw.githubusercontent.com/zeroznet/nadrbomz/main/zshrc_zero"
-SCREENRC_URL="https://raw.githubusercontent.com/zeroznet/nadrbomz/main/screenrc_zero"
-NVIM_INIT_URL="https://raw.githubusercontent.com/zeroznet/nadrbomz/main/init.vim_zero"
+BASE_URL="https://raw.githubusercontent.com/zeroznet/nadrbomz/main"
+
+ZSHRC_URL="${BASE_URL}/zshrc_zero"
+BASHRC_URL="${BASE_URL}/bashrc_zero"
+SHELL_ALIASES_URL="${BASE_URL}/shell_aliases_zero"
+SCREENRC_URL="${BASE_URL}/screenrc_zero"
+NVIM_INIT_URL="${BASE_URL}/init.vim_zero"
 
 OHMYZSH_DIR="${HOME}/.oh-my-zsh"
 ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-${OHMYZSH_DIR}/custom}"
@@ -53,10 +57,9 @@ install_ohmyzsh() {
   log "Installing Oh My Zsh..."
 
   if has_cmd curl; then
-    CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh -c \
-      "$(curl -fsSL "${install_url}")" "" --unattended
+    CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL "${install_url}")" "" --unattended
   elif has_cmd fetch; then
-    tmp_installer=$(mktemp "${TMPDIR:-/tmp}/ohmyzsh.XXXXXX")
+    tmp_installer="$(mktemp "${TMPDIR:-/tmp}/ohmyzsh.XXXXXX")"
     fetch -q -o "${tmp_installer}" "${install_url}"
     CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh "${tmp_installer}" --unattended
     rm -f "${tmp_installer}"
@@ -85,13 +88,13 @@ deploy_file() {
   target="$2"
   label="$3"
 
-  tmp_file=$(mktemp "${TMPDIR:-/tmp}/dotfile.XXXXXX")
+  tmp_file="$(mktemp "${TMPDIR:-/tmp}/dotfile.XXXXXX")"
   trap 'rm -f "${tmp_file}"' EXIT HUP INT TERM
 
   log "Downloading ${label} from GitHub..."
   download_file "${url}" "${tmp_file}"
 
-  target_dir=$(dirname "${target}")
+  target_dir="$(dirname "${target}")"
   mkdir -p "${target_dir}"
 
   if [ -f "${target}" ] || [ -L "${target}" ]; then
@@ -102,11 +105,14 @@ deploy_file() {
 
   mv "${tmp_file}" "${target}"
   trap - EXIT HUP INT TERM
+
   log "Installed ${target}"
 }
 
 deploy_dotfiles() {
+  deploy_file "${SHELL_ALIASES_URL}" "${HOME}/.shell_aliases" ".shell_aliases"
   deploy_file "${ZSHRC_URL}" "${HOME}/.zshrc" ".zshrc"
+  deploy_file "${BASHRC_URL}" "${HOME}/.bashrc" ".bashrc"
   deploy_file "${SCREENRC_URL}" "${HOME}/.screenrc" ".screenrc"
   deploy_file "${NVIM_INIT_URL}" "${HOME}/.config/nvim/init.vim" "init.vim"
 }

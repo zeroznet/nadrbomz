@@ -1,0 +1,77 @@
+# -----------------------------------------------------------------------------
+# Shared aliases and shell-safe functions for Bash and Zsh.
+# Source from both ~/.zshrc and ~/.bashrc.
+# -----------------------------------------------------------------------------
+
+# Guard: interactive shells only.
+case $- in
+  *i*) ;;
+  *) return 0 2>/dev/null || exit 0 ;;
+esac
+
+# -----------------------------------------------------------------------------
+# Host detection.
+# -----------------------------------------------------------------------------
+
+__rb_host="${HOST:-${HOSTNAME:-$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo unknown)}}"
+
+# -----------------------------------------------------------------------------
+# Core aliases.
+# -----------------------------------------------------------------------------
+
+alias e='nvim'
+alias lh='ssh localhost.sk -p 443'
+alias vanguard='ssh zero@vanguard.tfx.one -p 22222'
+alias vanguard='ssh zero@sentinel.tfx.one -p 22222'
+alias s='sudo su -'
+alias si='sudo -i'
+alias ss='sudo -s'
+alias su='su -'
+
+# -----------------------------------------------------------------------------
+# Docker wrapper.
+# Uses docker directly if available for current user.
+# Falls back to sudo docker when needed.
+# -----------------------------------------------------------------------------
+
+dk() {
+  if ! command -v docker >/dev/null 2>&1; then
+    printf 'docker not found\n' >&2
+    return 127
+  fi
+
+  if docker info >/dev/null 2>&1; then
+    docker "$@"
+    return
+  fi
+
+  if command -v sudo >/dev/null 2>&1; then
+    sudo docker "$@"
+    return
+  fi
+
+  docker "$@"
+}
+
+alias dps='dk ps'
+alias dpa='dk ps -a'
+alias di='dk images'
+alias dl='dk logs'
+
+# -----------------------------------------------------------------------------
+# Host-specific aliases.
+# -----------------------------------------------------------------------------
+
+if [ "$__rb_host" = "USDSCWN34032527" ]; then
+  alias wcd='cd "/c/Documents and Settings/rbopko"'
+
+  if command -v kubectl >/dev/null 2>&1; then
+    alias k='kubectl'
+    alias kn='kubectl ns'
+    alias kubens='kubectl ns'
+    alias kc='kubectl ctx'
+    alias kubectx='kubectl ctx'
+  fi
+fi
+
+unset __rb_host

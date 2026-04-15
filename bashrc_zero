@@ -1,59 +1,43 @@
 # -----------------------------------------------------------------------------
-# ~/.zshrc
-# Personal interactive Zsh config.
+# ~/.bashrc
+# Personal interactive Bash config.
 # Shared aliases live in ~/.shell_aliases.
 # -----------------------------------------------------------------------------
+
+# Guard: interactive shells only.
+case $- in
+  *i*) ;;
+  *) return ;;
+esac
 
 # -----------------------------------------------------------------------------
 # Path.
 # -----------------------------------------------------------------------------
 
-typeset -U path PATH
-
-[[ -d "$HOME/bin"  ]] && path+=("$HOME/bin")
-[[ -d "$HOME/sbin" ]] && path+=("$HOME/sbin")
+[ -d "$HOME/bin"  ] && PATH="$HOME/bin:$PATH"
+[ -d "$HOME/sbin" ] && PATH="$HOME/sbin:$PATH"
 
 export PATH
-
-# -----------------------------------------------------------------------------
-# Oh My Zsh.
-# -----------------------------------------------------------------------------
-
-export ZSH="$HOME/.oh-my-zsh"
-ZSH_THEME="minimal"
-
-case "$OSTYPE" in
-  cygwin*|msys*)
-    plugins=(colored-man-pages)
-    HISTORY_IGNORE='(.{100,}|*\<\<*|*EOF*)'
-    DISABLE_AUTO_TITLE="true"
-    ;;
-  *)
-    plugins=(zsh-autosuggestions colored-man-pages)
-    HISTORY_IGNORE='(.{100,}|*\<\<*|*EOF*)'
-    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=5'
-    ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
-    ZSH_AUTOSUGGEST_STRATEGY=(history completion)
-    ;;
-esac
-
-ZSH_DISABLE_COMPFIX=true
-source "$ZSH/oh-my-zsh.sh"
 
 # -----------------------------------------------------------------------------
 # Prompt.
 # -----------------------------------------------------------------------------
 
-setopt PROMPT_SUBST
-setopt NO_BEEP
+__rb_set_prompt() {
+  local c_reset='\[\e[0m\]'
+  local c_user='\[\e[1;35m\]'
+  local c_path='\[\e[1;34m\]'
+  local c_root='\[\e[31m\]'
+  local c_usermark='\[\e[32m\]'
 
-if [[ $EUID -eq 0 ]]; then
-  PROMPT='%{$fg_bold[magenta]%}%n@%m%{$reset_color%} at %{$fg_bold[blue]%}%~%{$reset_color%} %{$fg[red]%}>%{$reset_color%} '
-else
-  PROMPT='%{$fg_bold[magenta]%}%n@%m%{$reset_color%} at %{$fg_bold[blue]%}%~%{$reset_color%} %{$fg[green]%}>%{$reset_color%} '
-fi
+  if [ "$EUID" -eq 0 ]; then
+    PS1="${c_user}\u@\h${c_reset} at ${c_path}\w${c_reset} ${c_root}>${c_reset} "
+  else
+    PS1="${c_user}\u@\h${c_reset} at ${c_path}\w${c_reset} ${c_usermark}>${c_reset} "
+  fi
+}
 
-RPROMPT=''
+PROMPT_COMMAND="__rb_set_prompt"
 
 # -----------------------------------------------------------------------------
 # Environment.
@@ -81,56 +65,69 @@ case "$OSTYPE" in
 esac
 
 # -----------------------------------------------------------------------------
+# Less / man colors.
+# -----------------------------------------------------------------------------
+
+if [ -t 1 ]; then
+  export LESS_TERMCAP_mb=$'\e[1;31m'
+  export LESS_TERMCAP_md=$'\e[1;36m'
+  export LESS_TERMCAP_me=$'\e[0m'
+  export LESS_TERMCAP_se=$'\e[0m'
+  export LESS_TERMCAP_so=$'\e[1;44;33m'
+  export LESS_TERMCAP_ue=$'\e[0m'
+  export LESS_TERMCAP_us=$'\e[1;32m'
+fi
+
+# -----------------------------------------------------------------------------
 # Filesystem defaults.
 # -----------------------------------------------------------------------------
 
-if [[ $USER == root ]]; then
+if [ "${USER:-$(id -un)}" = "root" ]; then
   umask 022
 else
   umask 077
 fi
 
-[[ -d "$HOME/tmp" ]] || mkdir -p "$HOME/tmp"
+[ -d "$HOME/tmp" ] || mkdir -p "$HOME/tmp"
 export TMPDIR="$HOME/tmp"
 
 # -----------------------------------------------------------------------------
 # History.
 # -----------------------------------------------------------------------------
 
-if [[ -f "$HOME/incognito_shell" ]]; then
+HISTSIZE=10000
+HISTFILESIZE=10000
+HISTCONTROL=ignoredups:erasedups
+
+shopt -s histappend
+shopt -s checkwinsize
+
+if [ -f "$HOME/incognito_shell" ]; then
   unset HISTFILE
-  setopt HIST_IGNORE_ALL_DUPS
-  setopt SHARE_HISTORY
-  setopt HIST_NO_STORE
+  set +o history
 fi
 
 # -----------------------------------------------------------------------------
 # SSH keychain.
 # -----------------------------------------------------------------------------
 
-if [[ -f "$HOME/.ssh/keychain_enabled" ]] && command -v keychain >/dev/null 2>&1; then
-  keychain_args=$(cat "$HOME/.ssh/keychain_enabled")
+HOST="${HOST:-${HOSTNAME:-$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo unknown)}}"
+
+if [ -f "$HOME/.ssh/keychain_enabled" ] && command -v keychain >/dev/null 2>&1; then
+  keychain_args="$(cat "$HOME/.ssh/keychain_enabled")"
   keychain -q $keychain_args
-  [[ -f "$HOME/.keychain/${HOST}-sh" ]] && . "$HOME/.keychain/${HOST}-sh"
+  [ -f "$HOME/.keychain/${HOST}-sh" ] && . "$HOME/.keychain/${HOST}-sh"
 fi
-
-# -----------------------------------------------------------------------------
-# Optional autosuggest accept binding.
-# Disabled per your ask. Leave commented unless you want it back.
-# -----------------------------------------------------------------------------
-
-# if (( $+widgets[autosuggest-accept] )); then
-#   bindkey '^E' autosuggest-accept
-# fi
 
 # -----------------------------------------------------------------------------
 # Host-specific shell bits.
 # -----------------------------------------------------------------------------
 
-if [[ "$HOST" == "USDSCWN34032527" ]]; then
+if [ "$HOST" = "USDSCWN34032527" ]; then
   if command -v kubectl >/dev/null 2>&1; then
-    source <(kubectl completion zsh)
+    source <(kubectl completion bash)
   fi
+
   export USE_GKE_GCLOUD_AUTH_PLUGIN=True
   export AZURE_CLI_DISABLE_CONNECTION_VERIFICATION=anycontent
 else
@@ -138,8 +135,17 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Shared aliases and functions.
-# Keep this near the end so it can override plugin aliases cleanly.
+# Bash completion.
 # -----------------------------------------------------------------------------
 
-[[ -r "$HOME/.shell_aliases" ]] && . "$HOME/.shell_aliases"
+if [ -r /usr/share/bash-completion/bash_completion ]; then
+  . /usr/share/bash-completion/bash_completion
+elif [ -r /etc/bash_completion ]; then
+  . /etc/bash_completion
+fi
+
+# -----------------------------------------------------------------------------
+# Shared aliases and functions.
+# -----------------------------------------------------------------------------
+
+[ -r "$HOME/.shell_aliases" ] && . "$HOME/.shell_aliases"

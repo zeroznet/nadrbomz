@@ -29,6 +29,23 @@ alias ss='sudo -s'
 alias su='su -'
 
 # -----------------------------------------------------------------------------
+# ls aliases.
+# GNU ls uses --color=auto.
+# BSD ls uses -G.
+# -----------------------------------------------------------------------------
+
+if ls --color=auto >/dev/null 2>&1; then
+  alias ls='ls --color=auto'
+elif ls -G >/dev/null 2>&1; then
+  alias ls='ls -G'
+fi
+
+alias l='ls -lah'
+alias la='ls -lah'
+alias ll='ls -lh'
+alias lsa='ls -lah'
+
+# -----------------------------------------------------------------------------
 # Docker wrapper.
 # Uses docker directly if available for current user.
 # Falls back to sudo docker when needed.

@@ -6,9 +6,13 @@ Personal shell bootstrap for Zsh.
 
 - installs Oh-My-Zsh if missing
 - installs or updates `zsh-autosuggestions`
-- downloads `zshrc_zero` from GitHub
-- backs up current `~/.zshrc`
-- overwrites `~/.zshrc` with the downloaded config
+- downloads all config files from GitHub and deploys them:
+  - `zshrc_zero` -> `~/.zshrc`
+  - `bashrc_zero` -> `~/.bashrc`
+  - `shell_aliases_zero` -> `~/.shell_aliases`
+  - `init.vim_zero` -> `~/.config/nvim/init.vim`
+  - `screenrc_zero` -> `~/.screenrc`
+- backs up any existing target file before overwriting it (`.bak.YYYYMMDDHHMMSS` suffix)
 
 ## One-line install
 

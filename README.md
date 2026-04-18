@@ -26,8 +26,12 @@ fetch -q -o - https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.
 
 ## Files
 
-- `nadrbomz.sh` - bootstrap
-- `zshrc_zero` - my default config
+- `nadrbomz.sh` - bootstrap script
+- `bashrc_zero` - Bash shell config
+- `zshrc_zero` - Zsh shell config
+- `shell_aliases_zero` - shared shell aliases and functions
+- `init.vim_zero` - Neovim config
+- `screenrc_zero` - GNU Screen config
 
 ## License
 

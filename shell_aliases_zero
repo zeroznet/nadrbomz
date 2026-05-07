@@ -10,6 +10,20 @@ case $- in
 esac
 
 # -----------------------------------------------------------------------------
+# Truecolor advert.
+# Set COLORTERM=truecolor only when TERM advertises a 256-color capable
+# terminfo. Skips bare xterm (PuTTY default), linux console, dumb, etc,
+# so apps don't emit 24-bit SGR into terminals that can't render them.
+# Respects COLORTERM that the terminal already exported (iTerm2, Alacritty).
+# -----------------------------------------------------------------------------
+
+case "$TERM" in
+  *-256color|tmux*|alacritty|xterm-kitty)
+    export COLORTERM="${COLORTERM:-truecolor}"
+    ;;
+esac
+
+# -----------------------------------------------------------------------------
 # Host detection.
 # -----------------------------------------------------------------------------
 

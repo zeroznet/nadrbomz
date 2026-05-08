@@ -46,6 +46,7 @@ truecolor on
 # Strip outer-terminal smcup/rmcup so host scrollback works natively.
 # xterm* covers Ptyxis (VTE) + Windows Terminal + GNOME/Konsole + xterm + kitty.
 # Plus PuTTY family, rxvt/urxvt, and nested screen/tmux for completeness.
+
 termcapinfo xterm*  ti@:te@
 termcapinfo putty*  ti@:te@
 termcapinfo rxvt*   ti@:te@

@@ -23,7 +23,6 @@ startup_message off
 vbell off
 autodetach on
 defflow off
-zombie kr
 msgwait 2
 
 # Enough history to be useful, still modest.

@@ -12,6 +12,7 @@ Personal shell and environment bootstrap.
   - `shell_aliases_zero` -> `~/.shell_aliases`
   - `init.vim_zero` -> `~/.config/nvim/init.vim`
   - `screenrc_zero` -> `~/.screenrc`
+  - `tmuxrc_zero` -> `~/.tmux.conf`
   - `fastfetch_zero` -> `~/.config/fastfetch/config.jsonc`
 - backs up any existing target file before overwriting it (`.bak.YYYYMMDDHHMMSS` suffix)
 
@@ -37,6 +38,7 @@ fetch -q -o - https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.
 - `shell_aliases_zero` - shared shell aliases and functions
 - `init.vim_zero` - Neovim config
 - `screenrc_zero` - GNU Screen config
+- `tmuxrc_zero` - tmux config
 - `fastfetch_zero` - fastfetch system info config
 
 ## License

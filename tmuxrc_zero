@@ -1,0 +1,86 @@
+# -----------------------------------------------------------------------------
+# ~/.tmux.conf
+# Personal tmux config.
+# Minimal screen-flavoured layout. C-a prefix, 24-bit colour, no probes,
+# no mouse, terminal handles selection. Ubuntu Yaru + Powerline status bar.
+#
+# Refs:
+#   https://ericmjl.github.io/blog/2025/12/27/how-i-themed-my-tmux-with-opencode-and-claude/
+#   https://hamvocke.com/blog/a-guide-to-customizing-your-tmux-conf/
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# Prefix.
+# -----------------------------------------------------------------------------
+
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+bind a   send-prefix
+
+# -----------------------------------------------------------------------------
+# Terminal.
+# 24-bit colour. RGB declared, no probing.
+# -----------------------------------------------------------------------------
+
+set -g default-terminal "tmux-256color"
+set -ag terminal-features ",xterm-256color:RGB"
+
+# -----------------------------------------------------------------------------
+# Behaviour.
+# -----------------------------------------------------------------------------
+
+set -g mouse off
+set -g history-limit 10000
+set -g base-index 0
+set -g renumber-windows on
+set -g status-interval 1
+set -s escape-time 10
+setw -g alternate-screen off
+setw -g monitor-activity off
+set -g visual-activity off
+
+# -----------------------------------------------------------------------------
+# Bindings.
+# -----------------------------------------------------------------------------
+
+bind c   new-window -c "~"
+bind C-c new-window -c "~"
+bind k   confirm-before -p "kill window #W? (y/n)" kill-window
+bind C-k confirm-before -p "kill window #W? (y/n)" kill-window
+bind C-p previous-window
+bind C-n next-window
+bind C-d detach-client
+bind r   source-file ~/.tmux.conf \; display "tmux.conf reloaded"
+bind |   split-window -h -c "#{pane_current_path}"
+bind -   split-window -v -c "#{pane_current_path}"
+
+# -----------------------------------------------------------------------------
+# Status bar. Ubuntu Yaru + Powerline.
+# -----------------------------------------------------------------------------
+
+set -g status on
+set -g status-position bottom
+set -g status-justify centre
+set -g status-style "bg=#2C001E,fg=#EEEEEC"
+set -g status-left-length  60
+set -g status-right-length 50
+
+# Left: session name pill.
+set -g status-left "#[fg=#EEEEEC,bg=#77216F,bold] #S #[fg=#77216F,bg=#2C001E,nobold] "
+
+# Right: mirror pill, host only.
+set -g status-right "#[fg=#77216F,bg=#2C001E]#[fg=#EEEEEC,bg=#77216F,bold] #H #[default]"
+
+# Window list.
+setw -g window-status-format         "#[fg=#AEA79F,bg=#2C001E] #I #W#F "
+setw -g window-status-current-format "#[fg=#EFB73E,bg=#2C001E]#[fg=#2C001E,bg=#EFB73E,bold] #I #W#F #[fg=#EFB73E,bg=#2C001E,nobold]"
+setw -g window-status-activity-style "fg=#EFB73E,bg=#2C001E,bold"
+setw -g window-status-separator      ""
+
+# -----------------------------------------------------------------------------
+# Command prompt + messages.
+# -----------------------------------------------------------------------------
+
+set -g message-style "fg=#2C001E,bg=#E95420,bold"
+setw -g mode-style   "fg=#2C001E,bg=#EFB73E,bold"

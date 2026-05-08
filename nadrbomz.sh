@@ -10,6 +10,7 @@ ZSHRC_URL="${BASE_URL}/zshrc_zero"
 BASHRC_URL="${BASE_URL}/bashrc_zero"
 SHELL_ALIASES_URL="${BASE_URL}/shell_aliases_zero"
 SCREENRC_URL="${BASE_URL}/screenrc_zero"
+TMUXRC_URL="${BASE_URL}/tmuxrc_zero"
 NVIM_INIT_URL="${BASE_URL}/init.vim_zero"
 FASTFETCH_CONFIG_URL="${BASE_URL}/fastfetch_zero"
 
@@ -116,6 +117,7 @@ deploy_dotfiles() {
   deploy_file "${ZSHRC_URL}" "${HOME}/.zshrc" ".zshrc"
   deploy_file "${BASHRC_URL}" "${HOME}/.bashrc" ".bashrc"
   deploy_file "${SCREENRC_URL}" "${HOME}/.screenrc" ".screenrc"
+  deploy_file "${TMUXRC_URL}" "${HOME}/.tmux.conf" ".tmux.conf"
   deploy_file "${NVIM_INIT_URL}" "${HOME}/.config/nvim/init.vim" "init.vim"
   deploy_file "${FASTFETCH_CONFIG_URL}" "${HOME}/.config/fastfetch/config.jsonc" "fastfetch config"
 }

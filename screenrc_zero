@@ -82,13 +82,13 @@ bind C-d detach
 #   Yellow active   #EFB73E
 #   Muted text      #AEA79F
 #
-# Glyphs (UTF-8 octal escapes):
-#   \356\202\260   U+E0B0 right pointer  (   )
-#   \356\202\262   U+E0B2 left pointer   (   )
+# Glyphs (literal UTF-8, screen does not interpret \NNN in format strings):
+#     U+E0B0 right pointer
+#     U+E0B2 left pointer
 # =============================================================================
 
 hardstatus alwayslastline
-hardstatus string '%{= b #EEEEEC;#77216F} %H %{= #77216F;#2C001E}\356\202\260%= %{= #AEA79F;#2C001E}%-Lw%{= #2C001E;#EFB73E}\356\202\260%{= b #2C001E;#EFB73E} %n %t%f %{= #EFB73E;#2C001E}\356\202\260%{= #AEA79F;#2C001E}%+Lw %= %{= #77216F;#2C001E}\356\202\262%{= b #EEEEEC;#77216F} %m/%d %c '
+hardstatus string '%{= b #EEEEEC;#77216F} %H %{= #77216F;#2C001E}%= %{= #AEA79F;#2C001E}%-Lw%{= #2C001E;#EFB73E}%{= b #2C001E;#EFB73E} %n %t%f %{= #EFB73E;#2C001E}%{= #AEA79F;#2C001E}%+Lw %= %{= #77216F;#2C001E}%{= b #EEEEEC;#77216F} %m/%d %c '
 
 # Transient messages anchored top-right so they don't clobber the pill row.
 status top right

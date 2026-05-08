@@ -87,7 +87,7 @@ bind C-d detach
 # =============================================================================
 
 hardstatus alwayslastline
-hardstatus string '%{= xEEEEEC;x77216F} %H %{= x77216F;x2C001E}%= %{= xAEA79F;x2C001E}%-Lw%{= x2C001E;xEFB73E} %n %t%f %{= xEFB73E;x2C001E}%{= xAEA79F;x2C001E}%+Lw %= %{= x77216F;x2C001E}%{= xEEEEEC;x77216F} %m/%d %c '
+hardstatus string '%{= xEEEEEC;x77216F} %H %{= xAEA79F;x2C001E}%= %-Lw%{= x2C001E;xEFB73E} %n %t%f %{= xAEA79F;x2C001E}%+Lw%= %{= xEEEEEC;x77216F} %m/%d '
 
 # Transient messages anchored top-right so they don't clobber the pill row.
 status top right

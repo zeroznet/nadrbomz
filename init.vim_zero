@@ -1,9 +1,30 @@
-" Don't fuck up with the mouse
+" -----------------------------------------------------------------------------
+" ~/.config/nvim/init.vim
+" Personal Neovim config.
+" Minimal: no mouse, surface trailing whitespace, no comment auto-continuation.
+" -----------------------------------------------------------------------------
+
+" -----------------------------------------------------------------------------
+" Mouse.
+" Off. Terminal handles selection.
+" -----------------------------------------------------------------------------
+
 set mouse=
-" Highlight trailing spaces
+
+" -----------------------------------------------------------------------------
+" Trailing whitespace.
+" Highlight so it's visible before commit.
+" -----------------------------------------------------------------------------
+
 highlight TrailingSpace ctermbg=red guibg=red
 match TrailingSpace /\s\+$/
-" Don't fuck up o
+
+" -----------------------------------------------------------------------------
+" Comment continuation.
+" Pressing o/O or hitting newline inside a comment should not auto-prefix the
+" comment leader in vim files.
+" -----------------------------------------------------------------------------
+
 augroup NoVimCommentContinuation
   autocmd!
   autocmd FileType vim setlocal formatoptions-=r formatoptions-=o formatoptions-=c comments=

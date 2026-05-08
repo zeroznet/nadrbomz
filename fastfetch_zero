@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------------
+// ~/.config/fastfetch/config.jsonc
+// Personal fastfetch system info config.
+// Default module set, no logo tweaks. JSONC: comments and trailing commas OK.
+// -----------------------------------------------------------------------------
+
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
   "modules": [

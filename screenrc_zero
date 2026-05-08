@@ -1,7 +1,13 @@
-#
-# Minimal cool default:
-# stay out of the way, keep old-school behavior,
-# and still handle modern UTF-8 / 256-color terminals sanely.
+# -----------------------------------------------------------------------------
+# ~/.screenrc
+# Personal GNU Screen config.
+# Stay out of the way, keep old-school behaviour, sanely handle modern
+# UTF-8 / 256-color terminals.
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# Behaviour.
+# -----------------------------------------------------------------------------
 
 # No startup banner.
 startup_message off
@@ -9,29 +15,37 @@ startup_message off
 # Enough history to be useful, still modest.
 defscrollback 10000
 
-# Modern text/color baseline.
-defutf8 on
-term screen-256color
-defbce on
-
-# Keep your preferred behavior:
-# do not jump in and out of the terminal's alternate screen buffer.
-# This keeps full-screen apps from messing with the visible terminal scrollback.
-termcapinfo xterm* ti@:te@
-termcapinfo rxvt*  ti@:te@
-
-# Quiet, predictable session behavior.
+# Quiet, predictable session behaviour.
 vbell off
 autodetach on
 
 # New windows start with your current shell.
 shell -$SHELL
 
-# Logging timestamps.
-# Only matters when logging is actually enabled for a window.
+# -----------------------------------------------------------------------------
+# Terminal.
+# Modern text/color baseline. Do not jump in/out of the terminal's alternate
+# screen buffer, so full-screen apps don't clobber visible scrollback.
+# -----------------------------------------------------------------------------
+
+defutf8 on
+term screen-256color
+defbce on
+
+termcapinfo xterm* ti@:te@
+termcapinfo rxvt*  ti@:te@
+
+# -----------------------------------------------------------------------------
+# Logging.
+# Timestamps only matter when logging is actually enabled for a window.
+# -----------------------------------------------------------------------------
+
 logtstamp on
 logtstamp after 1
 
+# -----------------------------------------------------------------------------
 # Status bar.
+# -----------------------------------------------------------------------------
+
 hardstatus alwayslastline
 hardstatus string '%{2;0}[%{+b10;0}%H%{-}][%= %{7;0}%?%-Lw%?%{+9;0}(%{+15;0}%n%f %t%?(%u)%?%{-})%{-} ^H%?%+Lw%?%= %{-}]%{+b14;0}[%m/%d/%y %c]%{-}%{-}'

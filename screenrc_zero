@@ -23,8 +23,6 @@ startup_message off
 vbell off
 autodetach on
 defflow off
-zombie kr
-msgwait 2
 
 # Enough history to be useful, still modest.
 defscrollback 10000
@@ -69,7 +67,6 @@ logtstamp after 1
 bind r source $HOME/.screenrc
 bind | split -v
 bind - split
-bind k confirm kill
 bind C-d detach
 
 # =============================================================================
@@ -89,6 +86,3 @@ bind C-d detach
 
 hardstatus alwayslastline
 hardstatus string '%{= b #EEEEEC;#77216F} %H %{= #77216F;#2C001E}%= %{= #AEA79F;#2C001E}%-Lw%{= #2C001E;#EFB73E}%{= b #2C001E;#EFB73E} %n %t%f %{= #EFB73E;#2C001E}%{= #AEA79F;#2C001E}%+Lw %= %{= #77216F;#2C001E}%{= b #EEEEEC;#77216F} %m/%d %c '
-
-# Transient messages anchored top-right so they don't clobber the pill row.
-status top right

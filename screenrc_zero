@@ -1,51 +1,93 @@
-# -----------------------------------------------------------------------------
+# =============================================================================
 # ~/.screenrc
-# Personal GNU Screen config.
-# Stay out of the way, keep old-school behaviour, sanely handle modern
-# UTF-8 / 256-color terminals.
-# -----------------------------------------------------------------------------
+# Personal GNU Screen 5.0+ config.
+# 24-bit colour, no probes, host-terminal scrollback intact, Ubuntu Yaru
+# Powerline status bar. Mirrors ~/.tmux.conf style, screen-flavoured.
+#
+# Requires: GNU Screen >= 5.0.0 (truecolor command, hex colour escapes).
+#
+# Refs:
+#   https://www.gnu.org/software/screen/manual/screen.html
+#   https://savannah.gnu.org/news/?id=10668
+#   https://lwn.net/Articles/987700/
+# =============================================================================
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Behaviour.
-# -----------------------------------------------------------------------------
+# =============================================================================
 
 # No startup banner.
 startup_message off
 
-# Enough history to be useful, still modest.
-defscrollback 10000
-
 # Quiet, predictable session behaviour.
 vbell off
 autodetach on
+defflow off
+zombie kr
+msgwait 2
+
+# Enough history to be useful, still modest.
+defscrollback 10000
 
 # New windows start with your current shell.
 shell -$SHELL
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Terminal.
-# Modern text/color baseline. Do not jump in/out of the terminal's alternate
-# screen buffer, so full-screen apps don't clobber visible scrollback.
-# -----------------------------------------------------------------------------
+# 24-bit colour. RGB declared, no probing. Outer terminal keeps scrollback;
+# nested apps still get their own alternate screen via screen's emulation.
+# =============================================================================
 
-defutf8 on
 term screen-256color
+defutf8 on
 defbce on
+truecolor on
 
-termcapinfo xterm* ti@:te@
-termcapinfo rxvt*  ti@:te@
+# Strip outer-terminal smcup/rmcup so host scrollback works natively.
+# xterm* covers Ptyxis (VTE) + Windows Terminal + GNOME/Konsole + xterm + kitty.
+# Plus PuTTY family, rxvt/urxvt, and nested screen/tmux for completeness.
+termcapinfo xterm*  ti@:te@
+termcapinfo putty*  ti@:te@
+termcapinfo rxvt*   ti@:te@
+termcapinfo screen* ti@:te@
+termcapinfo tmux*   ti@:te@
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Logging.
 # Timestamps only matter when logging is actually enabled for a window.
-# -----------------------------------------------------------------------------
+# =============================================================================
 
 logtstamp on
 logtstamp after 1
 
-# -----------------------------------------------------------------------------
-# Status bar.
-# -----------------------------------------------------------------------------
+# =============================================================================
+# Bindings.
+# C-a prefix (default). Mirror tmux split + reload + detach where useful.
+# =============================================================================
+
+bind r source $HOME/.screenrc
+bind | split -v
+bind - split
+bind k confirm kill
+bind C-d detach
+
+# =============================================================================
+# Status bar. Ubuntu Yaru + Powerline pills. Mirrors ~/.tmux.conf.
+#
+# Palette:
+#   Aubergine bg    #2C001E
+#   Light fg        #EEEEEC
+#   Purple pill     #77216F
+#   Yellow active   #EFB73E
+#   Muted text      #AEA79F
+#
+# Glyphs (UTF-8 octal escapes):
+#   \356\202\260   U+E0B0 right pointer  (   )
+#   \356\202\262   U+E0B2 left pointer   (   )
+# =============================================================================
 
 hardstatus alwayslastline
-hardstatus string '%{2;0}[%{+b10;0}%H%{-}][%= %{7;0}%?%-Lw%?%{+9;0}(%{+15;0}%n%f %t%?(%u)%?%{-})%{-} ^H%?%+Lw%?%= %{-}]%{+b14;0}[%m/%d/%y %c]%{-}%{-}'
+hardstatus string '%{= b #EEEEEC;#77216F} %H %{= #77216F;#2C001E}\356\202\260%= %{= #AEA79F;#2C001E}%-Lw%{= #2C001E;#EFB73E}\356\202\260%{= b #2C001E;#EFB73E} %n %t%f %{= #EFB73E;#2C001E}\356\202\260%{= #AEA79F;#2C001E}%+Lw %= %{= #77216F;#2C001E}\356\202\262%{= b #EEEEEC;#77216F} %m/%d %c '
+
+# Transient messages anchored top-right so they don't clobber the pill row.
+status top right

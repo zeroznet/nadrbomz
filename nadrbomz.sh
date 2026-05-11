@@ -32,21 +32,65 @@ has_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
-need_cmd() {
-  has_cmd "$1" || die "Missing required command: $1"
+detect_os() {
+  uname_s="$(uname -s 2>/dev/null || echo unknown)"
+  case "${uname_s}" in
+    Linux)
+      if [ -r /etc/os-release ]; then
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        printf '%s\n' "${ID:-linux}"
+      else
+        printf 'linux\n'
+      fi
+      ;;
+    FreeBSD) printf 'freebsd\n' ;;
+    Darwin)  printf 'macos\n' ;;
+    *)       printf '%s\n' "${uname_s}" ;;
+  esac
+}
+
+check_prereqs() {
+  missing=""
+  for tool in git zsh curl; do
+    has_cmd "${tool}" || missing="${missing} ${tool}"
+  done
+
+  [ -z "${missing}" ] && return 0
+
+  os="$(detect_os)"
+  printf 'ERROR: Missing required commands:%s\n' "${missing}" >&2
+  printf '\n' >&2
+  case "${os}" in
+    debian|ubuntu)
+      printf 'Install with:\n  sudo apt update && sudo apt install -y%s\n' "${missing}" >&2
+      ;;
+    freebsd)
+      printf 'Install with:\n  sudo pkg install -y%s\n' "${missing}" >&2
+      ;;
+    fedora|rhel|centos|rocky|almalinux)
+      printf 'Install with:\n  sudo dnf install -y%s\n' "${missing}" >&2
+      ;;
+    arch)
+      printf 'Install with:\n  sudo pacman -S --needed%s\n' "${missing}" >&2
+      ;;
+    alpine)
+      printf 'Install with:\n  sudo apk add%s\n' "${missing}" >&2
+      ;;
+    macos)
+      printf 'Install with:\n  brew install%s\n' "${missing}" >&2
+      ;;
+    *)
+      printf 'Install the listed packages with your system package manager.\n' >&2
+      ;;
+  esac
+  exit 1
 }
 
 download_file() {
   url="$1"
   out="$2"
-
-  if has_cmd curl; then
-    curl -fsSL "$url" -o "$out"
-  elif has_cmd fetch; then
-    fetch -q -o "$out" "$url"
-  else
-    die "Need curl or fetch to download files"
-  fi
+  curl -fsSL "$url" -o "$out"
 }
 
 install_ohmyzsh() {
@@ -58,17 +102,7 @@ install_ohmyzsh() {
   fi
 
   log "Installing Oh My Zsh..."
-
-  if has_cmd curl; then
-    CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL "${install_url}")" "" --unattended
-  elif has_cmd fetch; then
-    tmp_installer="$(mktemp "${TMPDIR:-/tmp}/ohmyzsh.XXXXXX")"
-    fetch -q -o "${tmp_installer}" "${install_url}"
-    CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh "${tmp_installer}" --unattended
-    rm -f "${tmp_installer}"
-  else
-    die "Need curl or fetch to install Oh My Zsh"
-  fi
+  CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL "${install_url}")" "" --unattended
 }
 
 sync_git_repo() {
@@ -122,13 +156,25 @@ deploy_dotfiles() {
   deploy_file "${FASTFETCH_CONFIG_URL}" "${HOME}/.config/fastfetch/config.jsonc" "fastfetch config"
 }
 
-main() {
-  need_cmd git
-  need_cmd zsh
+print_post_install_hint() {
+  os="$(detect_os)"
+  zsh_path="$(command -v zsh)"
 
-  if ! has_cmd curl && ! has_cmd fetch; then
-    die "Need curl or fetch"
-  fi
+  log "Done."
+  log ""
+  log "Start zsh now:           exec zsh"
+  case "${os}" in
+    freebsd)
+      log "Set zsh as login shell:  sudo chsh -s ${zsh_path} ${USER:-\$USER}"
+      ;;
+    *)
+      log "Set zsh as login shell:  chsh -s ${zsh_path}"
+      ;;
+  esac
+}
+
+main() {
+  check_prereqs
 
   install_ohmyzsh
 
@@ -137,8 +183,7 @@ main() {
 
   deploy_dotfiles
 
-  log "Done."
-  log "Run: exec zsh"
+  print_post_install_hint
 }
 
 main "$@"

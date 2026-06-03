@@ -13,6 +13,7 @@ SCREENRC_URL="${BASE_URL}/screenrc_zero"
 TMUXRC_URL="${BASE_URL}/tmuxrc_zero"
 NVIM_INIT_URL="${BASE_URL}/init.vim_zero"
 FASTFETCH_CONFIG_URL="${BASE_URL}/fastfetch_zero"
+SSH_CONFIG_URL="${BASE_URL}/ssh_config_zero"
 
 OHMYZSH_DIR="${HOME}/.oh-my-zsh"
 ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-${OHMYZSH_DIR}/custom}"
@@ -154,6 +155,7 @@ deploy_dotfiles() {
   deploy_file "${TMUXRC_URL}" "${HOME}/.tmux.conf" ".tmux.conf"
   deploy_file "${NVIM_INIT_URL}" "${HOME}/.config/nvim/init.vim" "init.vim"
   deploy_file "${FASTFETCH_CONFIG_URL}" "${HOME}/.config/fastfetch/config.jsonc" "fastfetch config"
+  deploy_file "${SSH_CONFIG_URL}" "${HOME}/.ssh/config" "ssh config"
 }
 
 print_post_install_hint() {

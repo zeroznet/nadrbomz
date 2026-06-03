@@ -14,6 +14,7 @@ Personal shell and environment bootstrap.
   - `screenrc_zero` -> `~/.screenrc`
   - `tmuxrc_zero` -> `~/.tmux.conf`
   - `fastfetch_zero` -> `~/.config/fastfetch/config.jsonc`
+  - `ssh_config_zero` -> `~/.ssh/config`
 - backs up any existing target file before overwriting it (`.bak.YYYYMMDDHHMMSS` suffix)
 
 ## One-line install
@@ -40,6 +41,7 @@ fetch -q -o - https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.
 - `screenrc_zero` - GNU Screen config
 - `tmuxrc_zero` - tmux config
 - `fastfetch_zero` - fastfetch system info config
+- `ssh_config_zero` - SSH client config (hosts and keepalive defaults)
 
 ## License
 

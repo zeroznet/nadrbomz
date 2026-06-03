@@ -1,0 +1,17 @@
+# scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Opus 4.8)
+
+Host sentinel
+    HostName sentinel.tfx.one
+    User zero
+    Port 22222
+
+Host vanguard
+    HostName vanguard.tfx.one
+    User zero
+    Port 22222
+
+Host *
+    ServerAliveInterval 10
+    ServerAliveCountMax 3
+    TCPKeepAlive yes
+    VerifyHostKeyDNS yes

@@ -24,6 +24,15 @@ case "$TERM" in
 esac
 
 # -----------------------------------------------------------------------------
+# TERMCAP.
+# screen exports an 8-color TERMCAP that FreeBSD ncurses honors over terminfo,
+# capping TUIs (lnav) at 8 colors. Unset it so the 256-color terminfo wins.
+# $STY is set only inside screen, so this is a no-op everywhere else.
+# -----------------------------------------------------------------------------
+
+[ -n "$STY" ] && unset TERMCAP
+
+# -----------------------------------------------------------------------------
 # Host detection.
 # -----------------------------------------------------------------------------
 
@@ -43,6 +52,17 @@ alias s='sudo su -'
 alias si='sudo -i'
 alias ss='sudo -s'
 alias su='su -'
+
+# -----------------------------------------------------------------------------
+# Log viewer.
+# Linux: follow the last hour of the journal as JSON through lnav.
+# FreeBSD: lnav on the merged syslog and its rotations.
+# -----------------------------------------------------------------------------
+
+case "$(uname -s)" in
+  Linux)   alias slog='sudo journalctl --since "1 hour ago" -f -o json | lnav' ;;
+  FreeBSD) alias slog="sudo lnav '/var/log/all*'" ;;
+esac
 
 # -----------------------------------------------------------------------------
 # ls aliases.

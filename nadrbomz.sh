@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Opus 4.7)
+# scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Opus 4.8)
 
 set -eu
 set -o pipefail
@@ -158,6 +158,36 @@ deploy_dotfiles() {
   deploy_file "${SSH_CONFIG_URL}" "${HOME}/.ssh/config" "ssh config"
 }
 
+fix_terminfo_setaf() {
+  # FreeBSD base ships only termcap (/etc/termcap), whose xterm-256color uses an
+  # unconditional setaf (\E[38;5;%p1%dm) that encodes the 8 ANSI colours as
+  # indexed. Bold + an indexed colour can't be brightened, so Windows Terminal
+  # renders it as heavier font weight. Compile a corrected entry (conditional
+  # setaf: legacy \E[3Nm for colours 0-7) into ~/.terminfo, which tinfo reads
+  # before /etc/termcap. No-op where setaf is already correct (e.g. Linux).
+  if ! has_cmd infocmp || ! has_cmd tic; then
+    log "infocmp/tic missing, skipping terminfo fix."
+    return 0
+  fi
+
+  if ! infocmp xterm-256color 2>/dev/null | grep -q 'setaf=\\E\[38;5;%p1%dm'; then
+    log "Terminfo xterm-256color already correct, skipping."
+    return 0
+  fi
+
+  log "Patching xterm-256color terminfo (conditional setaf) into ~/.terminfo..."
+  ti_src="$(mktemp "${TMPDIR:-/tmp}/terminfo.XXXXXX")"
+  trap 'rm -f "${ti_src}"' EXIT HUP INT TERM
+  infocmp -x xterm-256color | sed \
+    -e 's#setaf=\\E\[38;5;%p1%dm#setaf=\\E[%?%p1%{8}%<%t3%p1%d%e%p1%{16}%<%t9%p1%{8}%-%d%e38;5;%p1%d%;m#' \
+    -e 's#setab=\\E\[48;5;%p1%dm#setab=\\E[%?%p1%{8}%<%t4%p1%d%e%p1%{16}%<%t10%p1%{8}%-%d%e48;5;%p1%d%;m#' \
+    > "${ti_src}"
+  tic -x "${ti_src}"
+  rm -f "${ti_src}"
+  trap - EXIT HUP INT TERM
+  log "Installed corrected xterm-256color to ~/.terminfo"
+}
+
 print_post_install_hint() {
   os="$(detect_os)"
   zsh_path="$(command -v zsh)"
@@ -184,6 +214,8 @@ main() {
   sync_git_repo "${AUTOSUGGEST_REPO}" "${AUTOSUGGEST_DIR}" "zsh-autosuggestions"
 
   deploy_dotfiles
+
+  fix_terminfo_setaf
 
   print_post_install_hint
 }

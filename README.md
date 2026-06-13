@@ -16,6 +16,7 @@ Personal shell and environment bootstrap.
   - `fastfetch_zero` -> `~/.config/fastfetch/config.jsonc`
   - `ssh_config_zero` -> `~/.ssh/config`
 - backs up any existing target file before overwriting it (`.bak.YYYYMMDDHHMMSS` suffix)
+- fixes FreeBSD's stale `xterm-256color` terminfo (unconditional `setaf`) by compiling a corrected entry into `~/.terminfo` so bold + a base colour renders correctly instead of as a bold font; no-op where already correct
 
 ## One-line install
 

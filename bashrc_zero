@@ -44,7 +44,7 @@ PROMPT_COMMAND="__rb_set_prompt"
 # Environment.
 # -----------------------------------------------------------------------------
 
-export LANG="${LANG:-en_US.UTF-8}"
+export LANG=en_US.UTF-8
 export EDITOR="nvim"
 export ARCHFLAGS="-arch $(uname -m)"
 export PAGER="less"

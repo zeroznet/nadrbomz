@@ -42,6 +42,19 @@ ZSH_DISABLE_COMPFIX=true
 source "$ZSH/oh-my-zsh.sh"
 
 # -----------------------------------------------------------------------------
+# Lock down completion dumps.
+# compinit writes $HOME/.zcompdump-<host>-<version>; force 600 on each login so
+# a stray umask or copied-in dotfile cannot leave it group- or world-readable.
+# The absolute glob avoids a cd, and the (N) null-glob qualifier expands to
+# nothing when no dump exists yet, so the loop simply does not run.
+# -----------------------------------------------------------------------------
+
+for __zcd in "$HOME"/.zcompdump*(N); do
+  chmod 600 "$__zcd"
+done
+unset __zcd
+
+# -----------------------------------------------------------------------------
 # Prompt.
 # -----------------------------------------------------------------------------
 

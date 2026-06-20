@@ -16,4 +16,6 @@
 
 ## CLAUDE.md syncing and configuration
 
-Need to sort out how `CLAUDE.md` files are managed across machines and projects — where the source of truth lives, what gets synced, and what stays per-machine. Also general Claude Code config (skills, hooks, settings.json, memory dir) hygiene.
+Authored Claude config (`~/.claude` skills/commands/scripts/statusline/`settings.json`) and the workspace `~/dev/CLAUDE.md` + `HOWTO.md` are now synced by `nadrbomz.sh`; marketplace plugins reinstall from `settings.json` (declaration-only, always-latest).
+
+Still open: per-project memory (`~/.claude/projects/<hash>/memory/`) is path-encoded and project-scoped — decide whether it belongs in each project's repo rather than this dotfiles bootstrap.

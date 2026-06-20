@@ -15,6 +15,11 @@ Personal shell and environment bootstrap.
   - `tmuxrc_zero` -> `~/.tmux.conf`
   - `fastfetch_zero` -> `~/.config/fastfetch/config.jsonc`
   - `ssh_config_zero` -> `~/.ssh/config`
+- syncs the authored Claude config into place:
+  - `claude/skills/` -> `~/.claude/skills/` (align, calibrate, handoff, ica, prototype)
+  - `claude/commands/`, `claude/scripts/`, `claude/statusline-command.sh`, `claude/settings.json` -> `~/.claude/`
+  - `dev/CLAUDE.md` -> `~/dev/CLAUDE.md`, `dev/HOWTO.md` -> `~/dev/HOWTO.md`
+- reinstalls marketplace plugins declared in `settings.json` via `claude plugin` (needs `claude` + `jq`; skipped with a warning if either is missing). Plugin code itself is never vendored.
 - backs up any existing target file before overwriting it (`.bak.YYYYMMDDHHMMSS` suffix)
 - fixes FreeBSD's stale `xterm-256color` terminfo (unconditional `setaf`) by compiling a corrected entry into `~/.terminfo` so bold + a base colour renders correctly instead of as a bold font; no-op where already correct
 
@@ -43,6 +48,8 @@ fetch -q -o - https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.
 - `tmuxrc_zero` - tmux config
 - `fastfetch_zero` - fastfetch system info config
 - `ssh_config_zero` - SSH client config (hosts and keepalive defaults)
+- `claude/` - authored Claude Code config (skills, commands, scripts, statusline, `settings.json`) mirrored into `~/.claude`
+- `dev/` - workspace docs (`CLAUDE.md`, `HOWTO.md`) deployed to `~/dev`
 
 ## License
 

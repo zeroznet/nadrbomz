@@ -41,5 +41,8 @@
   "skipWorkflowUsageWarning": true,
   "theme": "dark",
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "env": {
+    "LAST30DAYS_MEMORY_DIR": "/home/zero/dev/last30days"
+  }
 }

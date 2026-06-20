@@ -5,3 +5,7 @@
 .DS_Store
 HANDOFF.md
 HANDOFF.md.bak
+.credentials.json
+claude/**/.credentials.json
+docs/
+.superpowers/

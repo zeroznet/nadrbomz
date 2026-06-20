@@ -284,6 +284,14 @@ bootstrap_claude_plugins() {
     return 0
   fi
 
+  # set -o pipefail is active, so a jq failure on a malformed settings.json
+  # would propagate through the pipelines below and abort the installer under
+  # set -e. Validate up front and skip rather than letting bootstrap kill the run.
+  if ! jq empty "${settings}" 2>/dev/null; then
+    warn "settings.json is not valid JSON, skipping plugin bootstrap."
+    return 0
+  fi
+
   log "Adding extra marketplaces..."
   jq -r '.extraKnownMarketplaces // {} | to_entries[] | .value.source.repo // empty' "${settings}" |
   while IFS= read -r repo; do

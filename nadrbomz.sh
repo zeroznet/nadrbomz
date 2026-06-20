@@ -15,6 +15,10 @@ NVIM_INIT_URL="${BASE_URL}/init.vim_zero"
 FASTFETCH_CONFIG_URL="${BASE_URL}/fastfetch_zero"
 SSH_CONFIG_URL="${BASE_URL}/ssh_config_zero"
 
+NADRBOMZ_CLONE_URL="${NADRBOMZ_CLONE_URL:-https://github.com/zeroznet/nadrbomz.git}"
+CLAUDE_DIR="${HOME}/.claude"
+DEV_DIR="${HOME}/dev"
+
 OHMYZSH_DIR="${HOME}/.oh-my-zsh"
 ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-${OHMYZSH_DIR}/custom}"
 AUTOSUGGEST_DIR="${ZSH_CUSTOM_DIR}/plugins/zsh-autosuggestions"
@@ -22,6 +26,10 @@ AUTOSUGGEST_REPO="https://github.com/zsh-users/zsh-autosuggestions.git"
 
 log() {
   printf '%s\n' "$*"
+}
+
+warn() {
+  printf 'WARNING: %s\n' "$*" >&2
 }
 
 die() {
@@ -203,6 +211,61 @@ print_post_install_hint() {
       log "Set zsh as login shell:  chsh -s ${zsh_path}"
       ;;
   esac
+}
+
+deploy_tree_from_clone() {
+  src="$1"
+  target="$2"
+  label="$3"
+
+  if [ -d "${target}" ]; then
+    backup="${target}.bak.$(date +%Y%m%d%H%M%S)"
+    cp -rp "${target}" "${backup}"
+    log "Backed up existing ${label} to ${backup}"
+  fi
+
+  mkdir -p "${target}"
+  cp -r "${src}/." "${target}/"
+  log "Synced ${label} into ${target}"
+}
+
+deploy_file_from_clone() {
+  src="$1"
+  target="$2"
+  label="$3"
+
+  mkdir -p "$(dirname "${target}")"
+
+  if [ -f "${target}" ] || [ -L "${target}" ]; then
+    backup="${target}.bak.$(date +%Y%m%d%H%M%S)"
+    cp -p "${target}" "${backup}"
+    log "Backed up existing ${label} to ${backup}"
+  fi
+
+  cp "${src}" "${target}"
+  log "Installed ${target}"
+}
+
+deploy_claude_config() {
+  clone_dir="$(mktemp -d "${TMPDIR:-/tmp}/nadrbomz-clone.XXXXXX")"
+  trap 'rm -rf "${clone_dir}"' EXIT HUP INT TERM
+
+  log "Cloning nadrbomz for Claude config..."
+  git clone --depth 1 "${NADRBOMZ_CLONE_URL}" "${clone_dir}"
+
+  deploy_tree_from_clone "${clone_dir}/claude/skills"   "${CLAUDE_DIR}/skills"   "Claude skills"
+  deploy_tree_from_clone "${clone_dir}/claude/commands" "${CLAUDE_DIR}/commands" "Claude commands"
+  deploy_tree_from_clone "${clone_dir}/claude/scripts"  "${CLAUDE_DIR}/scripts"  "Claude scripts"
+  deploy_file_from_clone "${clone_dir}/claude/statusline-command.sh" "${CLAUDE_DIR}/statusline-command.sh" "Claude statusline"
+  deploy_file_from_clone "${clone_dir}/claude/settings.json" "${CLAUDE_DIR}/settings.json" "Claude settings.json"
+
+  deploy_file_from_clone "${clone_dir}/dev/CLAUDE.md" "${DEV_DIR}/CLAUDE.md" "workspace CLAUDE.md"
+  deploy_file_from_clone "${clone_dir}/dev/HOWTO.md"  "${DEV_DIR}/HOWTO.md"  "workspace HOWTO.md"
+
+  chmod +x "${CLAUDE_DIR}/scripts/prune.sh" "${CLAUDE_DIR}/statusline-command.sh" 2>/dev/null || true
+
+  rm -rf "${clone_dir}"
+  trap - EXIT HUP INT TERM
 }
 
 main() {

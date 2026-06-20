@@ -292,20 +292,28 @@ bootstrap_claude_plugins() {
     return 0
   fi
 
-  log "Adding extra marketplaces..."
-  jq -r '.extraKnownMarketplaces // {} | to_entries[] | .value.source.repo // empty' "${settings}" |
-  while IFS= read -r repo; do
+  known="${CLAUDE_DIR}/plugins/known_marketplaces.json"
+  log "Syncing extra marketplaces..."
+  jq -r '.extraKnownMarketplaces // {} | to_entries[] | "\(.key) \(.value.source.repo // "")"' "${settings}" |
+  while read -r name repo; do
     [ -n "${repo}" ] || continue
+    if [ -f "${known}" ] && jq -e --arg n "${name}" 'has($n)' "${known}" >/dev/null 2>&1; then
+      continue
+    fi
     log "  marketplace add ${repo}"
-    claude plugin marketplace add "${repo}" >/dev/null 2>&1 || warn "  marketplace add ${repo} failed (may already exist)"
+    claude plugin marketplace add "${repo}" >/dev/null 2>&1 || warn "  marketplace add ${repo} failed"
   done
 
-  log "Installing enabled plugins..."
+  installed="${CLAUDE_DIR}/plugins/installed_plugins.json"
+  log "Syncing enabled plugins..."
   jq -r '.enabledPlugins // {} | to_entries[] | select(.value == true) | .key' "${settings}" |
   while IFS= read -r plugin; do
     [ -n "${plugin}" ] || continue
+    if [ -f "${installed}" ] && jq -e --arg p "${plugin}" '.plugins | has($p)' "${installed}" >/dev/null 2>&1; then
+      continue
+    fi
     log "  install ${plugin}"
-    claude plugin install "${plugin}" >/dev/null 2>&1 || warn "  install ${plugin} failed (may already be installed)"
+    claude plugin install "${plugin}" >/dev/null 2>&1 || warn "  install ${plugin} failed"
   done
 }
 

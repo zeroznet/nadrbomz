@@ -268,6 +268,39 @@ deploy_claude_config() {
   trap - EXIT HUP INT TERM
 }
 
+bootstrap_claude_plugins() {
+  if ! has_cmd claude; then
+    log "claude CLI not found, skipping plugin bootstrap."
+    return 0
+  fi
+  if ! has_cmd jq; then
+    warn "jq not found, skipping plugin bootstrap (install jq to enable). settings.json already deployed."
+    return 0
+  fi
+
+  settings="${CLAUDE_DIR}/settings.json"
+  if [ ! -f "${settings}" ]; then
+    log "No settings.json found, skipping plugin bootstrap."
+    return 0
+  fi
+
+  log "Adding extra marketplaces..."
+  jq -r '.extraKnownMarketplaces // {} | to_entries[] | .value.source.repo // empty' "${settings}" |
+  while IFS= read -r repo; do
+    [ -n "${repo}" ] || continue
+    log "  marketplace add ${repo}"
+    claude plugin marketplace add "${repo}" >/dev/null 2>&1 || warn "  marketplace add ${repo} failed (may already exist)"
+  done
+
+  log "Installing enabled plugins..."
+  jq -r '.enabledPlugins // {} | to_entries[] | select(.value == true) | .key' "${settings}" |
+  while IFS= read -r plugin; do
+    [ -n "${plugin}" ] || continue
+    log "  install ${plugin}"
+    claude plugin install "${plugin}" >/dev/null 2>&1 || warn "  install ${plugin} failed (may already be installed)"
+  done
+}
+
 main() {
   check_prereqs
 
@@ -277,6 +310,9 @@ main() {
   sync_git_repo "${AUTOSUGGEST_REPO}" "${AUTOSUGGEST_DIR}" "zsh-autosuggestions"
 
   deploy_dotfiles
+
+  deploy_claude_config
+  bootstrap_claude_plugins
 
   fix_terminfo_setaf
 

@@ -10,42 +10,33 @@
 | End of session | `/calibrate` then `/handoff "<focus>"` |
 | Polish your last diff | `/simplify` |
 | Hostile second opinion before merge | `/requesting-code-review` |
-| Someone gave you review comments to handle | `/receiving-code-review` |
+| Handle review comments you were given | `/receiving-code-review` |
 | Touched auth, crypto, perms, SQL | `/security-review` |
 | One bug, no clue why | `/systematic-debugging` |
 | Repo feels tangled, structure is wrong | `/ica` |
 | Plan exists, gut says gaps | `/align deep` |
-| Want to test a design first | `/prototype` |
+| Validate a design before building | `/prototype` |
+| Deep, fact-checked research on a topic | `/deep-research <question>` |
 | Automate "when X, do Y" | `/update-config` |
-| Task with a verifiable end state | `/goal` |
-| Big job: codebase-wide hunt or large refactor | dynamic workflow ("Create a workflow") |
+| Task with a verifiable end state | `/goal <condition>` |
+| Big job: codebase-wide hunt or large refactor | "Create a workflow" |
 
-## Flows
+## Gotchas
 
-**New feature:** `/brainstorming`. Auto-chains to merge. One mid-flow prompt (subagent-driven vs inline).
+- **`/brainstorming` is the whole chain.** It auto-runs plan → TDD → review → finish; don't call those by hand. Expect one mid-flow prompt (subagent-driven vs inline).
+- **`/calibrate` then `/handoff`, in that order.** `/calibrate` is terminal — end the thread after it.
+- **`/goal` needs a checkable end state.** Example: `/goal all tests in test/auth pass and lint is clean`. It loops toward the condition on its own, validating after each step; vague goals ("make it nice") give the validator nothing to test.
+- **`/deep-research` wants a specific question.** Give it budget/use-case/region up front. If it's underspecified ("what car to buy"), it asks 2-3 narrowing questions first, then returns a source-verified, cited report.
+- **A workflow is one big job run as many parallel subagents** (codebase bug hunt, large refactor) in a single session. Ask "Create a workflow"; needs a Max/Team/Enterprise plan. Agents attack from independent angles and iterate until the answers converge.
+- **`/simplify` rewrites code; `/requesting-code-review` only evaluates it.** Different jobs. `/simplify` defaults to the recent diff — scope it with `/simplify <path>`.
+- **Verify before claiming.** Run the check command in the same message as "done / passes / fixed".
+- **Never reply "you're absolutely right" to review feedback.** `/receiving-code-review` enforces it.
 
-**Resume:** `/handoff`. Restores HANDOFF.md.
+## After `/brainstorming` finishes
 
-**End session:** `/calibrate`, then `/handoff "<focus>"`. Order matters.
+The chain already wrote, tested, reviewed, and merged. Optional extra passes:
 
-**Run until done:** `/goal <condition>`. Set a verifiable stop condition; Claude loops toward it without prompting at each step. A fast validator checks after every step whether the goal is met, and only closes the loop when it is. Example: `/goal all tests in test/auth pass and the lint step is clean`. Needs a checkable end state — vague goals ("make it nice") give the validator nothing to test.
-
-**Hand off a large task:** ask Claude to "Create a workflow." Dynamic workflows (research preview, Max/Team/Enterprise plans) run one big job — codebase-wide bug hunt, large refactor — as a coordinated fleet of parallel subagents in a single session. Claude writes a JavaScript orchestration script from your request; a runtime executes it in the background while the session stays responsive. Up to 1000 agents per run, 16 concurrent. Agents attack from independent angles, others refute, the run iterates until answers converge.
-
-## After `/brainstorming` says "done"
-
-The chain already wrote, tested, reviewed, and finished the branch. Optional extra passes:
-
-- `/simplify` — one more polish if the diff still feels heavy
-- `/security-review` — touched auth, crypto, perms, SQL (chain's review is general, not security-focused)
-- `/ica` — feature exposed broader structural mess worth fixing next
+- `/simplify` — the diff still feels heavy
+- `/security-review` — touched auth, crypto, perms, SQL (the chain's review is general, not security-focused)
+- `/ica` — the feature exposed a broader structural mess
 - `/calibrate` then `/handoff "<focus>"` — wrap the session
-
-## Rules
-
-- Before saying "done / passes / fixed", run the verification command in the same message.
-- `/simplify` rewrites code. `/requesting-code-review` evaluates code. Different jobs.
-- `/simplify` defaults to recent diff. Scope with `/simplify <path>`.
-- Never reply "you're absolutely right" to review feedback. `/receiving-code-review` enforces that.
-- `/calibrate` is terminal. End the thread after.
-- Inside `/brainstorming`, plan / TDD / review / finish chain automatically. Don't call them by hand.

@@ -31,12 +31,12 @@ Identify which question is being answered — from the user's prompt, the surrou
 - **"Does this logic / state model feel right?"** → [LOGIC.md](LOGIC.md). Tiny interactive terminal app that pushes the state machine through cases that are hard to reason about on paper.
 - **"What should this look like?"** → [UI.md](UI.md). Several radically different UI variants on a single route, switchable via a URL search param and a floating bottom bar.
 
-Branches produce very different artifacts — getting this wrong wastes the whole prototype. If the question is genuinely ambiguous and the user isn't reachable, default to whichever matches the surrounding code (backend module → logic; page or component → UI) and state the assumption at the top of the prototype.
+Branches produce very different artifacts — getting this wrong wastes the whole prototype. If the question is genuinely ambiguous and the user is reachable, ask via `AskUserQuestion` rather than guess — two options, one for each branch, with descriptions naming the artifact each produces (e.g. "Logic — tiny terminal app driving the state machine" vs "UI — several look-and-feel variants in the browser"). If the user isn't reachable, default to whichever matches the surrounding code (backend module → logic; page or component → UI) and state the assumption at the top of the prototype.
 
 ## Rules that apply to both branches
 
-1. **Throwaway from day one, marked as such.** Locate the prototype close to where it will actually be used (next to the module or page it's prototyping for) so context is obvious — but name it so a casual reader can see it's a prototype, not production. For throwaway UI routes, obey the project's existing routing convention; don't invent a new top-level structure.
-2. **One command to run.** Whatever the project's task runner supports — `pnpm <name>`, `python <path>`, `bun <path>`, `sh script.sh`, `make <target>`. The user must be able to start it without thinking.
+1. **Throwaway from day one, marked as such.** Locate the prototype close to where it will actually be used (next to the module or page it's prototyping for) so context is obvious — but name it so a casual reader can see it's a prototype, not production. For throwaway UI routes, obey the project's existing routing convention; don't invent a new top-level structure. The UI branch's Artifact-page delivery mode is the one exception: it never enters the repo at all, so this rule doesn't apply to it (see UI.md).
+2. **One command to run — or one link to open.** Whatever the project's task runner supports — `pnpm <name>`, `python <path>`, `bun <path>`, `sh script.sh`, `make <target>` — for the logic branch and route-based UI variants. The UI branch's Artifact-page mode has no command to run; its equivalent is the published page's URL. Either way, the user must be able to reach the prototype without thinking.
 3. **No persistence by default.** State lives in memory. Persistence is the thing the prototype is *checking*, not something it should depend on. If the question explicitly involves a database, hit a scratch DB or a local file with a clear "PROTOTYPE — wipe me" name.
 4. **Skip the polish.** No tests, no error handling beyond what makes the prototype runnable, no abstractions. The point is to learn something fast and then delete it.
 5. **Surface the state.** After every action (logic) or variant switch (UI), print or render the full relevant state so the user can see what changed.
@@ -67,7 +67,7 @@ If the user is around, that capture is a quick conversation. If not, leave a `NO
 | Question | Branch | Artifact |
 |---|---|---|
 | State / logic / data model | [LOGIC.md](LOGIC.md) | tiny TUI driving a portable logic module |
-| Look / layout / visual | [UI.md](UI.md) | N variants on one route, floating switcher bar |
+| Look / layout / visual | [UI.md](UI.md) | N variants on one route (default) or a single published Artifact page (no dev server), floating switcher bar |
 
 ## Hand off
 

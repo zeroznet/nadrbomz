@@ -1,13 +1,13 @@
 ---
 name: align
-description: Use when intent, scope, or design decisions in a task or plan are not yet locked. Defaults to a fast numbered-question pass with lettered options; with `deep`, walks the full design tree, resolves dependencies between decisions, and explores code before asking what code already answers.
+description: Use when intent, scope, or design decisions in a task or plan are not yet locked. Defaults to a fast batch of questions asked through the AskUserQuestion tool (numbered list with lettered options as fallback); with `deep`, walks the full design tree, resolves dependencies between decisions, and explores code before asking what code already answers.
 ---
 
 # align
 
 ## Purpose
 
-Cut ambiguity before code happens. Either fast (a numbered list of questions, each with lettered options the user can answer with `1c, 2a, 3 free-text`) or deep (walk every branch of the design tree, resolve decision dependencies, prefer reading the codebase over asking). Same skill, two intensities.
+Cut ambiguity before code happens. Either fast (a batch of up to 4 questions asked through the AskUserQuestion tool — clickable options, free-text "Other" built in, markdown fallback when the tool is unavailable) or deep (walk every branch of the design tree, resolve decision dependencies, prefer reading the codebase over asking). Same skill, two intensities.
 
 The win in both modes is the same: stop the agent from silently choosing for you, and stop the conversation from looping on ambiguities that compound.
 
@@ -30,8 +30,8 @@ The win in both modes is the same: stop the agent from silently choosing for you
 
 | Invocation | Mode | Behavior |
 |---|---|---|
-| `/align` | light | 4 numbered questions (default), lettered options |
-| `/align <N>` | light | up to `<N>` numbered questions, lettered options |
+| `/align` | light | 4 questions (default) via AskUserQuestion |
+| `/align <N>` | light | up to `<N>` questions via AskUserQuestion |
 | `/align deep` | deep | walk every decision branch, loop until clear |
 | `/align deep <N>` | deep | deep mode capped at `<N>` rounds |
 
@@ -43,13 +43,15 @@ The win in both modes is the same: stop the agent from silently choosing for you
 
 1. **Read the room.** Look at the current task or plan in the conversation. Note explicit decisions, implicit ones, and gaps.
 2. **Pick the top `<N>` ambiguities.** Default `<N>` is 4 if not specified. Prefer ambiguities where the wrong silent choice would cost real work.
-3. **Generate questions with lettered options.** Each question: one short sentence, then 2–4 lettered options labeled `a)` `b)` `c)` `d)`. The options must be *concretely different*, not three flavors of the same thing. The user can also answer free-text if none fit; do not include an explicit "e) other" — that's always implied.
-4. **Render the block.** Use the format in the next section verbatim.
+3. **Generate questions with concrete options.** Each question: one short sentence, then 2–4 options that are *concretely different*, not three flavors of the same thing. For the widget, each option gets a short `label` and a `description` spelling out the concrete alternative; for the markdown fallback, the same options render as lettered `a)` `b)` `c)` `d)`. Free-text is always available — the widget provides it natively as "Other"; don't add an explicit "other" option yourself.
+4. **Ask via the AskUserQuestion tool.** One call, up to 4 questions; each question gets a short `header` chip, the question text, and the options from step 3. When `<N>` is greater than 4, chunk into consecutive calls of at most 4 questions each. If the tool is unavailable (non-interactive run), use the fallback format in the next section instead.
 5. **Wait.** Do not start implementing. Do not "tentatively pick" a default. The whole point is the pick.
-6. **Parse the answer.** Accept compact forms: `1c, 2a, 3 free-text answer, 4 skip`. `skip` or empty = use your best judgment for that one, but call it out before acting on it.
+6. **Parse the answer.** Widget answers arrive structured — one selected label (or free-text via "Other") per question — apply them directly. The compact form `1c, 2a, 3 free-text answer, 4 skip` applies only to the markdown fallback; `skip` or empty there = use your best judgment for that one, but call it out before acting on it.
 7. **Resume the task** with the choices applied. Do not re-ask. Do not re-summarize the answers in long form — one short confirmation line is enough.
 
-### Output format (light)
+### Fallback format (no AskUserQuestion tool)
+
+Use only when the tool is unavailable, e.g. non-interactive runs. Same questions and options as the widget call, rendered as markdown instead.
 
 ```markdown
 ## align — <N> questions
@@ -84,12 +86,14 @@ Answer with `1c, 2a, 3 ...` or free-text per item. `skip` = use your judgment.
 3. **For each open decision, in dependency order:**
    - First, try to answer it from the code. Read the relevant files. The answer is often already there, encoded in interfaces, types, tests, or existing call sites.
    - If the code answers it, state the answer and the file you got it from. Move on.
-   - If the code does not answer it, ask the user — one decision at a time, with the relevant context (what depends on this, what alternatives are real).
+   - If the code does not answer it, print the per-round context block below (tree snapshot, why now, what I checked, alternatives, my read), then ask via one AskUserQuestion call: one question, options are the real alternatives with "My read" listed first and labeled "(Recommended)", plus a "Go with your read" option that accepts the recommendation as-is. If the tool is unavailable, ask via the block's closing line instead.
 4. **Apply the answer**, then re-check the tree. New decisions may have surfaced; old ones may now be irrelevant.
 5. **Loop** until every decision is resolved or explicitly deferred. If `<N>` was supplied, stop after `<N>` rounds and report what's still open.
 6. **Output a recap** when done: the decisions made, the reasons, and the files consulted along the way. Short. No chronology.
 
 ### Output format (deep, per round)
+
+Print this block every round before asking anything — it's the reasoning, not the question.
 
 ```markdown
 ## align deep — round <K>
@@ -104,6 +108,8 @@ Answer with `1c, 2a, 3 ...` or free-text per item. `skip` = use your judgment.
 
 Answer (a/b/c, free-text, or "go with your read")?
 ```
+
+Then ask via one AskUserQuestion call: a single question, with the `Alternatives` as options — "My read" first, labeled "(Recommended)", plus a "Go with your read" option. The tool call carries only the question and options; the reasoning stays in the block above. If the tool is unavailable, skip the call and let the block's closing line stand as the fallback prompt.
 
 ### Recap (deep, when done)
 

@@ -25,7 +25,7 @@ Two lanes, one sweep. **Config lane** (existing): corrections, preferences, tool
 
 - Session was trivial (one tweak, one answer). Nothing to calibrate.
 - You want a session bridge for a future session — use `handoff`. Calibrate folds facts into permanent homes; handoff writes the temporary bridge file.
-- You want to capture decisions and architecture rationale — that lives in commits, lessons logs, or `superpowers:writing-plans`, not here.
+- You want to author decisions or architecture rationale from scratch — that's `superpowers:writing-plans`. Routing an already-made decision to its rationale home is the state lane's job, not excluded here.
 - Mid-task. Calibrate is a sweep, not a checkpoint.
 
 ## Mode detection
@@ -104,9 +104,9 @@ The state lane extracts durable session facts and routes each into its canonical
 
 **Rules:** read the project's canonical files first (CLAUDE.md, TODO.md, README, owning docs, memory index) — the project's own rules win over the table; one owner per fact; rewrite in the destination's voice; update stale copies in place, never duplicate.
 
-**Accountability gate:** every extracted fact ends in exactly one bucket — **routed** (path), **already documented** (path), or **dropped** (reason). No fourth bucket; loop until the list is empty. The applied report includes this routing table.
+**Accountability gate:** every extracted fact ends in exactly one bucket — **routed** (path), **already documented** (path), or **dropped** (reason). State-lane items the user declined at pick time count as dropped with reason "user skipped". No fourth bucket; loop until the list is empty. The applied report includes this routing table.
 
-**Bridge consumption:** if HANDOFF.md was a source, after applying run `mv -f -- HANDOFF.md HANDOFF.md.bak`; do not write a new HANDOFF.md.
+**Bridge consumption:** if HANDOFF.md was a source and at least one state-lane item was applied, after applying run `mv -f -- HANDOFF.md HANDOFF.md.bak`; do not write a new HANDOFF.md. If every state-lane item was declined, leave HANDOFF.md in place.
 
 ## Workflow
 

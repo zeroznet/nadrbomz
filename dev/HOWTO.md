@@ -6,7 +6,7 @@
 |---|---|
 | One question, one tweak | just chat |
 | New feature or project | `/brainstorming` |
-| Resuming a project | `/handoff` |
+| Resuming a project | `/handoff --apply` |
 | End of session | `/calibrate` then `/handoff "<focus>"` |
 | Polish your last diff | `/simplify` |
 | Hostile second opinion before merge | `/requesting-code-review` |
@@ -24,7 +24,7 @@
 ## Gotchas
 
 - **`/brainstorming` is the whole chain.** It auto-runs plan → TDD → review → finish; don't call those by hand. Expect one mid-flow prompt (subagent-driven vs inline).
-- **`/calibrate` then `/handoff`, in that order.** `/calibrate` is terminal — end the thread after it.
+- **`/calibrate` then `/handoff`, in that order.** Calibrate folds durable facts into project files and config; handoff then writes the bridge for the next session. End the thread after the pair.
 - **`/goal` needs a checkable end state.** Example: `/goal all tests in test/auth pass and lint is clean`. It loops toward the condition on its own, validating after each step; vague goals ("make it nice") give the validator nothing to test.
 - **`/deep-research` wants a specific question.** Give it budget/use-case/region up front. If it's underspecified ("what car to buy"), it asks 2-3 narrowing questions first, then returns a source-verified, cited report.
 - **A workflow is one big job run as many parallel subagents** (codebase bug hunt, large refactor) in a single session. Ask "Create a workflow"; needs a Max/Team/Enterprise plan. Agents attack from independent angles and iterate until the answers converge.

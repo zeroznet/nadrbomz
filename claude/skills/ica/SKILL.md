@@ -56,7 +56,7 @@ Output a one-paragraph **Orientation note** (max 6 lines): what this repo is, la
 
 ### 2. Explore
 
-For repos over ~5k LOC, dispatch the `Explore` subagent with the lenses below as the search prompt. For smaller repos, walk it inline.
+For repos over ~5k LOC, dispatch the `Explore` subagent with the lenses below as the search prompt, explicitly requesting "very thorough" breadth so all ten lenses cover multiple locations and naming conventions. For smaller repos, walk it inline.
 
 Apply **all ten lenses**, not just depth. For each hit, capture: file path, 1-line friction note, lens.
 
@@ -113,6 +113,8 @@ Output exactly this structure (markdown). Numbered, scannable. Use the project's
 
 **Pick:** which would you like to take into a design pass? (numbers, or "all", or "none, go deeper on X")
 ```
+
+Collect the pick via the AskUserQuestion tool (multiSelect): one option per candidate, label = number + short title, description = the one-line problem. Free-text "Other" covers "none, go deeper on X". The markdown block above still renders in full before the tool call — the widget only replaces the trailing "Pick:" prompt.
 
 **Hard rules for step 4:**
 - Never propose interface signatures, method names, or code.

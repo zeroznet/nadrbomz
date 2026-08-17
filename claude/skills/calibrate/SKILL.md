@@ -181,7 +181,7 @@ After the user picks:
 - For CLAUDE.md: surgical edit, match existing style, no commentary added.
 - Commit in each touched repo per that project's commit conventions; never push.
 
-Report back in one block:
+Report back in one block. The two "state lane" lines complete the accountability gate (every extracted fact ends routed, already documented, or dropped) — omit a line only if that bucket was empty:
 
 ```markdown
 Applied:
@@ -189,6 +189,9 @@ Applied:
 - ...
 
 Skipped: <N>, <N>
+
+Already documented (state lane): <path> — <fact>, ...
+Dropped (state lane): <fact> — <reason>, ...
 
 Files written: <count>. Files unchanged: <count>.
 ```

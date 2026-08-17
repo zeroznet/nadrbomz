@@ -46,7 +46,7 @@ When the project has nothing to run — no dev server, no web app to plug a rout
 - Data is stubbed inline (representative sample values), since there's no backend to fetch from — same as any prototype under "No persistence by default."
 - The switcher is the same floating bottom-bar concept as route-based delivery (left arrow / variant label / right arrow, keyboard-cyclable), just implemented in plain JS instead of a shared component — there's only one file, so it lives directly in it.
 - The file lives in the **scratchpad directory**, never in the project tree. Load the `artifact-design` skill before writing it (the Artifact tool requires this), then publish with the Artifact tool. The published URL is the artifact — nothing gets committed.
-- There's no "production build" to hide the switcher from; the whole page is throwaway by construction, so skip the `NODE_ENV` gating that route-based delivery needs.
+- There's no "production build" to hide the switcher from, so skip the `NODE_ENV` gating that route-based delivery needs — but the local file being throwaway doesn't make the published page throwaway too. It starts private but persists as a hosted URL on claude.ai until someone deletes it; see step 6 below for cleanup.
 
 ## Process
 
@@ -118,7 +118,7 @@ Behaviour:
 - Clicking an arrow updates the URL search param so the variant is shareable and reload-stable — via the framework's router (`router.replace` on Next, `navigate` on React Router, etc) for route-based delivery, or plain `history.replaceState` for an Artifact page.
 - Keyboard: `←` and `→` arrow keys also cycle. Don't intercept arrow keys when an `<input>`, `<textarea>`, or `[contenteditable]` is focused.
 - Visually distinct from the page (e.g. high-contrast pill, subtle shadow) so it's obviously not part of the design being evaluated.
-- Route-based only: hidden in production builds — gate on `process.env.NODE_ENV !== 'production'` or an equivalent check, so a stray prototype merge can't ship the bar to users. An Artifact page has no production build to gate; it's throwaway by construction.
+- Route-based only: hidden in production builds — gate on `process.env.NODE_ENV !== 'production'` or an equivalent check, so a stray prototype merge can't ship the bar to users. An Artifact page has no production build and no separate production audience, so there's nothing to gate the switcher against.
 
 Route-based: put the switcher in a single shared component so both sub-shapes can reuse it, located wherever shared UI lives in the project. Artifact page: there's only one file, so the switcher lives directly in it.
 
@@ -132,7 +132,7 @@ Once a variant has won, write down which one and why (commit message, ADR, issue
 
 - **Sub-shape A** — delete the losing variants and the switcher; fold the winner into the existing page.
 - **Sub-shape B** — promote the winning variant to a real route, delete the throwaway route and the switcher.
-- **Artifact page** — nothing to delete from the repo; the file only ever lived in the scratchpad directory. Rebuild the winner properly as real code — the artifact's markup was written under prototype constraints, not folded in directly.
+- **Artifact page** — nothing to delete from the repo; the file only ever lived in the scratchpad directory. Rebuild the winner properly as real code — the artifact's markup was written under prototype constraints, not folded in directly. The published page itself is separate from the local file: it stays on claude.ai after the file is gone, so either remind the user to delete it from their claude.ai artifacts gallery (Claude cannot delete it from the CLI), or explicitly decide to keep it as the record of the answer.
 
 Don't leave variant components or the switcher lying around. They rot fast and confuse the next reader.
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
-# scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Opus 4.7)
+# scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Fable 5)
 # Clear Claude Code ephemera: chat transcripts, prompt history, plan/session caches,
-# shell snapshots, telemetry. Preserves credentials, settings, plugins, skills,
-# commands, agents, hooks, statusline, backups, downloads, and per-project memory/.
+# shell snapshots, telemetry, and daemon/agent-view state. Preserves credentials, settings,
+# plugins, skills, commands, agents, hooks, statusline, backups, downloads, and per-project memory/.
 set -eu
 
 log()  { printf '%s\n' "$*"; }
@@ -15,6 +15,8 @@ Usage: prune.sh [--apply|-a] [--help|-h]
 
 Default is dry-run: lists targets and sizes without deleting.
 --apply    actually delete.
+--apply also runs "claude daemon kill" first so the supervisor cannot hold
+stale agent-view state in memory.
 
 Targets:
   ~/.claude/file-history/
@@ -26,10 +28,13 @@ Targets:
   ~/.claude/cache/
   ~/.claude/telemetry/
   ~/.claude/tasks/
+  ~/.claude/daemon/
+  ~/.claude/jobs/
   ~/.claude/history.jsonl
   ~/.claude/stats-cache.json
   ~/.claude/projects/*/* (preserves */memory/)
   /tmp/claude-* and ~/tmp/claude-*
+  /tmp/cc-daemon-*
 
 Preserved (never touched):
   ~/.claude/.credentials.json
@@ -69,6 +74,8 @@ $C/shell-snapshots
 $C/cache
 $C/telemetry
 $C/tasks
+$C/daemon
+$C/jobs
 $C/history.jsonl
 $C/stats-cache.json
 "
@@ -134,6 +141,11 @@ for glob in "/tmp/claude-"* "$HOME/tmp/claude-"*; do
   fi
 done
 
+for glob in "/tmp/cc-daemon-"*; do
+  [ -e "$glob" ] || continue
+  print_size "$glob"
+done
+
 # projects: count non-memory entries per project
 proj_root="$C/projects"
 proj_total=0
@@ -152,12 +164,21 @@ fi
 
 if [ "$apply" -eq 0 ]; then
   log ""
+  if command -v claude >/dev/null 2>&1; then
+    log '  note: --apply will run "claude daemon kill" first (flushes agent-view state)'
+  fi
   log "Dry-run. Re-run with --apply to delete."
   exit 0
 fi
 
 log ""
 log "Applying..."
+
+if command -v claude >/dev/null 2>&1; then
+  claude daemon kill >/dev/null 2>&1 || warn "claude daemon kill failed (daemon may not be running)"
+else
+  warn "claude CLI not found; skipping daemon kill (agent view may show stale entries until restart)"
+fi
 
 for p in $simple_targets; do
   [ -e "$p" ] || continue
@@ -173,6 +194,11 @@ for glob in "/tmp/claude-"* "$HOME/tmp/claude-"*; do
   fi
 done
 
+for glob in "/tmp/cc-daemon-"*; do
+  [ -e "$glob" ] || continue
+  rm -rf -- "$glob"
+done
+
 if [ -d "$proj_root" ]; then
   find "$proj_root" -mindepth 2 \
     ! -path '*/memory' \
@@ -181,6 +207,7 @@ if [ -d "$proj_root" ]; then
 fi
 
 log "Pruned."
+log 'Note: restart any running claude instances to refresh the agents view (their in-memory state cannot be cleared externally).'
 log ""
 log "Preserved:"
 for p in \

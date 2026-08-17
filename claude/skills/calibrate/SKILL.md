@@ -1,6 +1,6 @@
 ---
 name: calibrate
-description: Use when a session has accumulated corrections, preferences, or repeated frustrations that should persist into future sessions. Sweeps the conversation, routes durable signals to the right destination (skill, command, CLAUDE.md, settings.json, auto-memory), proposes a numbered diff, applies only what the user picks.
+description: Use when a session accumulated corrections/preferences worth persisting (config lane) or durable session facts that must land in project files — TODO, docs, memory — so nothing is lost (state lane). Sweeps, proposes a numbered diff, applies only what the user picks.
 ---
 
 # calibrate
@@ -11,17 +11,20 @@ Turn this session's hard-won lessons into durable configuration before they evap
 
 Calibrate is the bridge between "I keep correcting Claude on the same thing" and "Claude already knows." It does not store activity logs, summaries, or context — only the *deltas* that future sessions need.
 
+Two lanes, one sweep. **Config lane** (existing): corrections, preferences, tool-call noise, workflow desires → skill files, commands, settings.json, CLAUDE.md, auto-memory. **State lane** (new): durable session facts — open work, operational facts, decisions with rationale — routed into the project's canonical files (TODO.md, owning docs, CLAUDE.md, auto-memory, rationale home) so nothing is lost when the session ends. State lane absorbs what used to be handoff's `--apply` mode: handoff now only writes a temporary bridge file, calibrate is where facts get a permanent home.
+
 ## When to use
 
 - End of a session with multiple corrections or preference statements.
 - After a frustrating debugging loop that revealed a missing permission, hook, or skill gap.
 - After a long session where you noticed the same nudge being given more than once.
 - Robert says `/calibrate`, `/calibrate --light`, "save what we learned", "polish the setup before I go".
+- End of session with durable facts (open work, decisions, operational facts) that would otherwise only live in a HANDOFF.md.
 
 ## When NOT to use
 
 - Session was trivial (one tweak, one answer). Nothing to calibrate.
-- You want to capture *state* (what was built, where work resumed) — use `handoff` instead.
+- You want a session bridge for a future session — use `handoff`. Calibrate folds facts into permanent homes; handoff writes the temporary bridge file.
 - You want to capture decisions and architecture rationale — that lives in commits, lessons logs, or `superpowers:writing-plans`, not here.
 - Mid-task. Calibrate is a sweep, not a checkpoint.
 
@@ -58,7 +61,7 @@ If a signal does not match any row above, do not propose it. The point of calibr
 
 Filter ruthlessly. Skip if:
 
-- The signal is ephemeral (current task state, in-progress work, what file we're editing right now).
+- The signal is momentary task state (what file we're editing right now, mid-edit progress) with no bearing past this session — distinct from durable open work/next steps, which the state lane routes to a task file.
 - The signal duplicates content already in CLAUDE.md, an existing memory file, or an existing skill. Read before proposing.
 - The signal is a code pattern, git-history fact, or architectural shape — those are derivable by reading the repo.
 - The signal is a one-off frustration with no signal of recurrence (user grumbled once, moved on).
@@ -79,6 +82,31 @@ When a signal could plausibly land in multiple targets, prefer in this order:
 6. **Auto-memory** as the fallback for user/feedback/project/reference facts that don't belong in any of the above.
 
 A signal goes in **one** place. No mirroring — see CLAUDE.md rule #10. If calibrate is about to propose the same change in two files, pick the canonical one and reference it from the other only if a reference is needed.
+
+## State lane
+
+The state lane extracts durable session facts and routes each into its canonical home, replacing what a HANDOFF.md would otherwise carry indefinitely.
+
+**Sources:** the current session, plus `$PWD/HANDOFF.md` if present (else `$PWD/HANDOFF.md.bak` when the session is empty).
+
+**Fact routing table** (adapted from handoff's former apply mode):
+
+| Fact kind | Destination |
+|---|---|
+| Open work, next steps, watch items | task file (TODO.md or equivalent) |
+| Operational facts: setup steps, cron tables, env vars | the runbook/doc owning that topic |
+| Behavior/structure changes that make the playbook stale | CLAUDE.md |
+| Constraint tied to one script/module | that file's usage()/comment, or its owning doc |
+| User preferences, corrections, cross-project lessons, external URLs | auto-memory |
+| Decisions + rationale | the project's rationale home (lessons log, commit message) |
+| Already documented at destination | skip — verify it's current, don't duplicate |
+| Derivable from repo/git, chronology | drop |
+
+**Rules:** read the project's canonical files first (CLAUDE.md, TODO.md, README, owning docs, memory index) — the project's own rules win over the table; one owner per fact; rewrite in the destination's voice; update stale copies in place, never duplicate.
+
+**Accountability gate:** every extracted fact ends in exactly one bucket — **routed** (path), **already documented** (path), or **dropped** (reason). No fourth bucket; loop until the list is empty. The applied report includes this routing table.
+
+**Bridge consumption:** if HANDOFF.md was a source, after applying run `mv -f -- HANDOFF.md HANDOFF.md.bak`; do not write a new HANDOFF.md.
 
 ## Workflow
 
@@ -108,6 +136,8 @@ For each surviving signal:
 - For settings.json edits, hand off to the `update-config` skill — do not author hook/permission JSON directly inside calibrate.
 
 ### 4. Present the sweep
+
+State-lane items join the same numbered list as config-lane items; each shows its destination path and the intended edit, exactly like a config-lane proposal. There is one sweep, one numbered list, one pick — not a separate list per lane.
 
 Output exactly this structure:
 
@@ -149,6 +179,7 @@ After the user picks:
 - For settings.json: delegate to `update-config`.
 - For skill edits: preserve frontmatter, do not bump version metadata.
 - For CLAUDE.md: surgical edit, match existing style, no commentary added.
+- Commit in each touched repo per that project's commit conventions; never push.
 
 Report back in one block:
 
@@ -182,7 +213,7 @@ Do not summarize the session itself. Do not propose follow-up work. Calibrate's 
 | Step | Output | Notes |
 |---|---|---|
 | 1. Scope | mode + path map | 1 line |
-| 2. Extract | raw signal list | internal, not shown |
+| 2. Extract | raw signal list (both lanes) | internal, not shown |
 | 3. Route + verify | proposals with diffs | reads target files |
 | 4. Present | numbered top-7 sweep | hard cap |
 | 5. Apply | edits + summary | only on user pick |

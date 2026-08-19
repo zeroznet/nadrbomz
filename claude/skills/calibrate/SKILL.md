@@ -141,18 +141,23 @@ State-lane items join the same numbered list as config-lane items. There is one 
 
 The sweep is a menu, not an audit dump. One line per item: **bold what** gets saved, plain-words why, and where it lands. No verbatim quotes, no turn numbers, no occurrence counts, no diff fences, no file bodies — the drafted change from step 3 stays in your head until apply. If the user wants to see the exact text of an item before picking, show that one item on request.
 
+Group items by theme — never mix unrelated kinds in one flat list. Typical themes: how to communicate (voice, formatting, question style), how to work (models, process, tooling), project state (TODO, docs, facts). Related signals within a theme that share one home merge into one item rather than fragmenting the menu.
+
 Output exactly this structure:
 
 ```markdown
 ## calibrate — <date>
 
+**<Theme>**
 **1. <short bold title>** — <one plain sentence: what gets remembered/updated and why> → `<file>`
+
+**<Theme>**
 **2. ...**
 
 Skipped: <one line naming the dropped signals, so the user can override>
 ```
 
-Collect the pick via the AskUserQuestion tool (multiSelect): one option per item, label = number + short title, description = the one-line summary. Free-text "Other" covers previews and edits.
+Collect the pick via the AskUserQuestion tool: one question per theme (multiSelect when the theme has several items; a save/drop pair when it has one), option label = number + short title, description = the one-line summary. Free-text "Other" covers previews and edits.
 
 Hard rules for this step:
 - Cap at top 5 proposals. Long tail goes in "Skipped".

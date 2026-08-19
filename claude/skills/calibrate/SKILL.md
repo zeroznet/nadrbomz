@@ -1,13 +1,13 @@
 ---
 name: calibrate
-description: Use when a session accumulated corrections/preferences worth persisting (config lane) or durable session facts that must land in project files — TODO, docs, memory — so nothing is lost (state lane). Sweeps, proposes a numbered diff, applies only what the user picks.
+description: Use when a session accumulated corrections/preferences worth persisting (config lane) or durable session facts that must land in project files — TODO, docs, memory — so nothing is lost (state lane). Sweeps, proposes a short numbered menu, applies only what the user picks.
 ---
 
 # calibrate
 
 ## Purpose
 
-Turn this session's hard-won lessons into durable configuration before they evaporate. Read the conversation, detect signals worth keeping (corrections, preferences, frustrations the user expressed more than once, tool noise that should have been allowlisted), and propose **applicable** updates with concrete file paths and diffs. User picks; calibrate applies. Nothing is written without consent.
+Turn this session's hard-won lessons into durable configuration before they evaporate. Read the conversation, detect signals worth keeping (corrections, preferences, frustrations the user expressed more than once, tool noise that should have been allowlisted), and propose **applicable** updates as a short numbered menu with concrete file paths. User picks; calibrate applies. Nothing is written without consent.
 
 Calibrate is the bridge between "I keep correcting Claude on the same thing" and "Claude already knows." It does not store activity logs, summaries, or context — only the *deltas* that future sessions need.
 
@@ -137,37 +137,27 @@ For each surviving signal:
 
 ### 4. Present the sweep
 
-State-lane items join the same numbered list as config-lane items; each shows its destination path and the intended edit, exactly like a config-lane proposal. There is one sweep, one numbered list, one pick — not a separate list per lane.
+State-lane items join the same numbered list as config-lane items. There is one sweep, one numbered list, one pick — not a separate list per lane.
+
+The sweep is a menu, not an audit dump. One line per item: **bold what** gets saved, plain-words why, and where it lands. No verbatim quotes, no turn numbers, no occurrence counts, no diff fences, no file bodies — the drafted change from step 3 stays in your head until apply. If the user wants to see the exact text of an item before picking, show that one item on request.
 
 Output exactly this structure:
 
 ```markdown
-## calibrate sweep — <date>, mode: <full|light>
+## calibrate — <date>
 
-Scanned: <N> turns. Signals kept: <K>. Dropped: <D> (one-off / duplicate / ephemeral).
+**1. <short bold title>** — <one plain sentence: what gets remembered/updated and why> → `<file>`
+**2. ...**
 
-### 1. <signal type> — <short title>
-- **Signal:** "<verbatim user quote>" (~turn <N>, occurred <X>×)
-- **Target:** `<absolute file path>` (<new file | existing section>)
-- **Change:**
-  ```diff
-  - <old line>
-  + <new line>
-  ```
-  *(or, for new files, show the full intended body in a fenced block)*
-- **Why durable:** <one short clause>
-
-### 2. ...
-
-**Skipped (low value):** <one line listing the dropped signals so the user can override>
-
-**Pick:** numbers, or "all", or "all except 2,4", or "none".
+Skipped: <one line naming the dropped signals, so the user can override>
 ```
 
+Collect the pick via the AskUserQuestion tool (multiSelect): one option per item, label = number + short title, description = the one-line summary. Free-text "Other" covers previews and edits.
+
 Hard rules for this step:
-- Cap at top 7 proposals. Long tail goes in "Skipped" as a one-liner per item.
-- Every proposal cites an absolute path.
-- Every proposal shows the actual change, not a paraphrase ("update the Voice section" is not enough — show the diff).
+- Cap at top 5 proposals. Long tail goes in "Skipped".
+- Every proposal names its destination file (short path is fine; keep the absolute path for apply time).
+- The one-line summary must say the substance ("save: subagents run on sonnet, haiku for trivia"), not a label ("save a model preference").
 - Found nothing? Say so in one line and stop. Do not pad.
 
 ### 5. Apply
@@ -206,7 +196,8 @@ Do not summarize the session itself. Do not propose follow-up work. Calibrate's 
 - **Mirroring the same rule into CLAUDE.md and memory.** Pick one canonical home. Memory `[[link]]` to CLAUDE.md if needed.
 - **Writing without reading.** Every target file must be opened first; otherwise the diff is a guess.
 - **Authoring settings.json directly.** Hand off to `update-config`. That skill knows the schema and won't break the file.
-- **Long proposals.** A proposal is one signal → one diff. Multi-signal bundles hide intent and make pick-by-number unreliable.
+- **Long proposals.** A proposal is one signal → one line in the menu. Multi-signal bundles hide intent and make pick-by-number unreliable.
+- **Audit dumps in the sweep.** Verbatim quotes, turn numbers, diff fences, full file bodies — that is apply-time detail, not menu material. One readable line per item.
 - **Padding when nothing changed.** Trivial session, no signals — say so in one line, no shame in stopping.
 - **Auto-applying.** Never write before the user picks, even on `--light`. The pick step is the whole point.
 - **Touching projects outside cwd.** Calibrate scopes to the current workspace's CLAUDE.md and `~/.claude/projects/<urlencoded-dir>/memory/`. Other projects' state is off-limits unless the user explicitly named them.
@@ -217,14 +208,14 @@ Do not summarize the session itself. Do not propose follow-up work. Calibrate's 
 |---|---|---|
 | 1. Scope | mode + path map | 1 line |
 | 2. Extract | raw signal list (both lanes) | internal, not shown |
-| 3. Route + verify | proposals with diffs | reads target files |
-| 4. Present | numbered top-7 sweep | hard cap |
+| 3. Route + verify | drafted changes (internal) | reads target files |
+| 4. Present | numbered top-5 menu | hard cap |
 | 5. Apply | edits + summary | only on user pick |
 | 6. Stop | nothing | no follow-up suggestions |
 
 ## Tuning
 
 - **Light cap:** 20 turns / 5 user messages. Adjust down if the session was small.
-- **Top-N:** 7 proposals. User can ask for more in chat ("show me 5 more") — keep the default scannable.
+- **Top-N:** 5 proposals. User can ask for more in chat ("show me 5 more") — keep the default scannable.
 - **Recurrence threshold:** mention occurrence count when ≥2. Single occurrence is fine to propose if it's an unambiguous preference statement.
 - **CLAUDE.md target:** the project-level CLAUDE.md (in cwd) by default. Touch `~/.claude/CLAUDE.md` only if the rule is truly user-global and the project is `~/dev` itself.

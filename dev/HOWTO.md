@@ -20,6 +20,7 @@
 | Automate "when X, do Y" | `/update-config` |
 | Task with a verifiable end state | `/goal <condition>` |
 | Big job: codebase-wide hunt or large refactor | "Create a workflow" |
+| Claude ephemera piling up, stale agents view | `/prune`, then `/prune --apply` |
 
 ## Gotchas
 

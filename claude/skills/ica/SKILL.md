@@ -25,7 +25,7 @@ Surface architectural friction across the whole repo and propose **deepening opp
 - Designing a new feature from scratch. Use `superpowers:brainstorming`.
 - Repo under ~500 LOC. Eyeball it.
 
-## Glossary (use these words; do not drift)
+## Glossary (internal analysis vocabulary — use these words while thinking; they never appear in the output)
 
 - **Module**: anything with an interface and an implementation. Function, class, package, slice, route handler.
 - **Interface**: everything a caller must know to use the module. Types, invariants, error modes, ordering, config. Not just the type signature.
@@ -73,52 +73,39 @@ Apply **all ten lenses**, not just depth. For each hit, capture: file path, 1-li
 
 Apply the **deletion test** to every depth and seam candidate. A "yes, deletion concentrates complexity" is the signal worth keeping.
 
-### 3. Score and rank
+### 3. Rank (internal — never shown)
 
-Before scoring: verify each candidate's decisive factual claim against the live file (open the cited path yourself — Explore summaries misreport). A candidate whose core claim does not survive direct reading is dropped or re-investigated, never scored down and presented.
+Before ranking: verify each candidate's decisive factual claim against the live file (open the cited path yourself — Explore summaries misreport). A candidate whose core claim does not survive direct reading is dropped or re-investigated, never presented anyway.
 
-For each candidate, assign:
-
-| Field | Scale | Meaning |
-|---|---|---|
-| Impact | 1–5 | How much does fixing this improve locality, leverage, test surface? |
-| Effort | 1–5 | Diff size, how many callers move, how much of the test suite moves with it. |
-| Confidence | L/M/H | How sure are you the proposed change is right? L means it needs a design pass (`align`) first. |
-| Risk | L/M/H | Likelihood of breaking unrelated things. |
-
-Rank by `Impact / Effort` first, break ties with Confidence. Cap presentation at **top 7**. Drop the long tail; the user can ask for more.
+Rank by what fixing it buys versus what it costs, in your head. Biggest win for the least work goes first. No scoring tables, no shorthand codes — if you can't justify a candidate's position in one plain sentence, it doesn't belong in the list. Cap presentation at **top 5**. Drop the long tail; the user can ask for more.
 
 ### 4. Present candidates
 
-Output exactly this structure (markdown). Numbered, scannable. Use the project's own vocabulary (whatever names the README / `CLAUDE.md` / code uses) for domain terms; use the glossary above for architecture terms.
+The lenses, the deletion test, and the glossary are analysis tools — they never appear in the output. No lens names, no "deletion test" verdicts, no Impact/Effort/Confidence/Risk labels, no architecture jargon a reader would have to look up. Translate everything into plain sentences. Use the project's own vocabulary for domain terms.
+
+Output exactly this structure (markdown). Numbered, scannable.
 
 ```
-## ica candidates: <repo name>
+## ica: <repo name>
 
-**Orientation:** <1 paragraph from step 1>
+<1 short paragraph: what this repo is and where the friction concentrates>
 
-**Top N opportunities** (Impact/Effort, ranked):
-
-### 1. <short title>  Impact 4 / Effort 2 / Conf H / Risk L
-- **Files:** `path/to/a.ts`, `path/to/b.ts:42-87`
-- **Lens:** Depth + Boundary
-- **Problem:** <2 to 4 sentences. Concrete. Cite a real call site if useful.>
-- **Deletion test:** <what happens if you delete it; concentrates or moves complexity?>
-- **Proposed deepening:** <plain English. No code yet. Use the project's existing vocabulary; if you have to invent a name, flag it.>
-- **Benefit:** <locality, leverage, test surface; in that order>
+### 1. <short title>
+- **Where:** `path/to/a.ts`, `path/to/b.ts:42-87`
+- **Problem:** <2 to 3 plain sentences a tired reader gets on first pass. Concrete. Cite a real call site if useful.>
+- **Fix:** <what to do, plain English, no code yet>
+- **Worth it because:** <one line — what gets easier, and roughly how big the change is (small edit / one file / touches N callers)>
 
 ### 2. ...
 
-**Skipped (long tail):** <one line listing 3 to 10 lower-priority hits so the user knows you saw them>
-
-**Pick:** which would you like to take into a design pass? (numbers, or "all", or "none, go deeper on X")
+**Also noticed:** <one line listing the lower-priority hits so the user knows you saw them>
 ```
 
-Collect the pick via the AskUserQuestion tool (multiSelect): one option per candidate, label = number + short title, description = the one-line problem. Free-text "Other" covers "none, go deeper on X". The markdown block above still renders in full before the tool call — the widget only replaces the trailing "Pick:" prompt.
+Collect the pick via the AskUserQuestion tool (multiSelect): one option per candidate, label = number + short title, description = the one-line problem. Free-text "Other" covers "none, go deeper on X". The markdown block above still renders in full before the tool call — the widget replaces any trailing "pick" prompt.
 
 **Hard rules for step 4:**
 - Never propose interface signatures, method names, or code.
-- Never list more than 7 candidates in the main block.
+- Never list more than 5 candidates in the main block.
 - Every candidate must cite at least one concrete file path.
 - Found nothing meaningful? Say so in one line. Do not pad.
 
@@ -146,7 +133,8 @@ Never silently start refactoring at the end of a design pass. Confirm with the u
 
 ## Anti-patterns
 
-- **Dumping 30 candidates.** That is data, not analysis. Cap at 7.
+- **Dumping 30 candidates.** That is data, not analysis. Cap at 5.
+- **Jargon in the output.** Lens names, deletion-test verdicts, scoring shorthand ("Conf M", "Risk L") — analysis vocabulary stays in your head. The reader gets plain sentences.
 - **Generic advice.** "Consider SOLID" is not a candidate. A candidate has files, lines, and a deletion test.
 - **Inventing interfaces in step 4.** That is design-pass (`align`) work. Step 4 names problems.
 - **"This module is bad"** without the deletion test. Vibes, not analysis.
@@ -161,7 +149,7 @@ Never silently start refactoring at the end of a design pass. Confirm with the u
 | 1. Orient | 1 paragraph | 1 to 3 min |
 | 2. Explore | raw notes per lens | 5 to 20 min (subagent for big repos) |
 | 3. Score | ranking table | 1 to 2 min |
-| 4. Present | top-7 markdown block | 1 min |
+| 4. Present | top-5 plain-language block | 1 min |
 | 5. Design pass | hand off to `align` deep / `superpowers:brainstorming` | as long as it takes |
 | 6. Hand off | plan or edits | follow-on skill |
 
@@ -169,5 +157,5 @@ Never silently start refactoring at the end of a design pass. Confirm with the u
 
 - **Subagent threshold:** ~5k LOC. Below it, walk the repo inline.
 - **Lens budget:** all 10 by default. User can scope: `/ica boundaries`, `/ica deps,errors`, `/ica depth seams`.
-- **Top-N:** 7 by default. User can ask for more, fewer, or focus on one area.
+- **Top-N:** 5 by default. User can ask for more, fewer, or focus on one area.
 - **History window:** `git log --since='3 months ago'` for hot-spot signal. Stretch to 6 months on slower repos, 1 month on fast ones.

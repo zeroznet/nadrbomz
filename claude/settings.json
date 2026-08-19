@@ -1,4 +1,7 @@
 {
+  "env": {
+    "LAST30DAYS_MEMORY_DIR": "/home/zero/dev/last30days"
+  },
   "permissions": {
     "allow": [
       "Edit",
@@ -13,6 +16,7 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "fable",
   "statusLine": {
     "type": "command",
     "command": "bash /home/zero/.claude/statusline-command.sh"
@@ -37,12 +41,10 @@
       }
     }
   },
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
+  "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
   "theme": "dark",
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true,
-  "env": {
-    "LAST30DAYS_MEMORY_DIR": "/home/zero/dev/last30days"
-  }
+  "skipAutoPermissionPrompt": true
 }

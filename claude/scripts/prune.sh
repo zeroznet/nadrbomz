@@ -15,7 +15,7 @@ Usage: prune.sh [--apply|-a] [--help|-h]
 
 Default is dry-run: lists targets and sizes without deleting.
 --apply    actually delete.
---apply also runs "claude daemon kill" first so the supervisor cannot hold
+--apply also runs "claude daemon stop --any" first so the supervisor cannot hold
 stale agent-view state in memory.
 
 Targets:
@@ -165,7 +165,7 @@ fi
 if [ "$apply" -eq 0 ]; then
   log ""
   if command -v claude >/dev/null 2>&1; then
-    log '  note: --apply will run "claude daemon kill" first (flushes agent-view state)'
+    log '  note: --apply will run "claude daemon stop --any" first (flushes agent-view state)'
   fi
   log "Dry-run. Re-run with --apply to delete."
   exit 0
@@ -175,9 +175,9 @@ log ""
 log "Applying..."
 
 if command -v claude >/dev/null 2>&1; then
-  claude daemon kill >/dev/null 2>&1 || warn "claude daemon kill failed (daemon may not be running)"
+  claude daemon stop --any >/dev/null 2>&1 || warn "claude daemon stop failed"
 else
-  warn "claude CLI not found; skipping daemon kill (agent view may show stale entries until restart)"
+  warn "claude CLI not found; skipping daemon stop (agent view may show stale entries until restart)"
 fi
 
 for p in $simple_targets; do

@@ -120,6 +120,32 @@ tmp_size_excluding_active() {
   fi
 }
 
+# Same, in KB (for the apply-mode cleared total).
+tmp_kb_excluding_active() {
+  tmp="$1"; active="$2"
+  if [ -n "$active" ] && [ "${active#$tmp/}" != "$active" ]; then
+    k=$(find "$tmp" -mindepth 1 \
+      ! -path "$active" ! -path "$active/*" \
+      -print0 2>/dev/null \
+      | du -skc --files0-from=- 2>/dev/null | tail -1 | awk '{print $1}')
+  else
+    k=$(du -sk "$tmp" 2>/dev/null | awk '{print $1}')
+  fi
+  echo "${k:-0}"
+}
+
+path_kb() {
+  [ -e "$1" ] || { echo 0; return 0; }
+  k=$(du -sk "$1" 2>/dev/null | awk '{print $1}')
+  echo "${k:-0}"
+}
+
+human_kb() {
+  if [ "$1" -ge 1048576 ]; then awk -v k="$1" 'BEGIN{printf "%.1f GB", k/1048576}'
+  elif [ "$1" -ge 1024 ]; then awk -v k="$1" 'BEGIN{printf "%.1f MB", k/1024}'
+  else printf '%s KB' "$1"; fi
+}
+
 print_size() {
   path="$1"
   [ -e "$path" ] || return 0
@@ -127,42 +153,41 @@ print_size() {
   printf '  %-8s  %s\n' "$sz" "$path"
 }
 
-log "Targets:"
-for p in $simple_targets; do print_size "$p"; done
-
-# /tmp/claude-* and ~/tmp/claude-* (skipping the active session subtree)
-for glob in "/tmp/claude-"* "$HOME/tmp/claude-"*; do
-  [ -e "$glob" ] || continue
-  sz=$(tmp_size_excluding_active "$glob" "$active_session")
-  if [ -n "$active_session" ] && [ "${active_session#$glob/}" != "$active_session" ]; then
-    printf '  %-8s  %s (active session preserved)\n' "${sz:-0}" "$glob"
-  else
-    printf '  %-8s  %s\n' "${sz:-0}" "$glob"
-  fi
-done
-
-for glob in "/tmp/cc-daemon-"*; do
-  [ -e "$glob" ] || continue
-  print_size "$glob"
-done
-
-# projects: count non-memory entries per project
 proj_root="$C/projects"
-proj_total=0
-if [ -d "$proj_root" ]; then
-  for proj in "$proj_root"/*/; do
-    [ -d "$proj" ] || continue
-    count=$(find "$proj" -mindepth 1 -maxdepth 1 ! -name memory 2>/dev/null | wc -l | tr -d ' ')
-    if [ "$count" -gt 0 ]; then
-      sz=$(find "$proj" -mindepth 1 ! -path "$proj/memory" ! -path "$proj/memory/*" -print0 2>/dev/null \
-           | du -shc --files0-from=- 2>/dev/null | tail -1 | awk '{print $1}')
-      printf '  %-8s  %s (%s entries, memory/ preserved)\n' "${sz:-?}" "$proj" "$count"
-      proj_total=$((proj_total + count))
-    fi
-  done
-fi
 
 if [ "$apply" -eq 0 ]; then
+  log "Targets:"
+  for p in $simple_targets; do print_size "$p"; done
+
+  # /tmp/claude-* and ~/tmp/claude-* (skipping the active session subtree)
+  for glob in "/tmp/claude-"* "$HOME/tmp/claude-"*; do
+    [ -e "$glob" ] || continue
+    sz=$(tmp_size_excluding_active "$glob" "$active_session")
+    if [ -n "$active_session" ] && [ "${active_session#$glob/}" != "$active_session" ]; then
+      printf '  %-8s  %s (active session preserved)\n' "${sz:-0}" "$glob"
+    else
+      printf '  %-8s  %s\n' "${sz:-0}" "$glob"
+    fi
+  done
+
+  for glob in "/tmp/cc-daemon-"*; do
+    [ -e "$glob" ] || continue
+    print_size "$glob"
+  done
+
+  # projects: count non-memory entries per project
+  if [ -d "$proj_root" ]; then
+    for proj in "$proj_root"/*/; do
+      [ -d "$proj" ] || continue
+      count=$(find "$proj" -mindepth 1 -maxdepth 1 ! -name memory 2>/dev/null | wc -l | tr -d ' ')
+      if [ "$count" -gt 0 ]; then
+        sz=$(find "$proj" -mindepth 1 ! -path "$proj/memory" ! -path "$proj/memory/*" -print0 2>/dev/null \
+             | du -shc --files0-from=- 2>/dev/null | tail -1 | awk '{print $1}')
+        printf '  %-8s  %s (%s entries, memory/ preserved)\n' "${sz:-?}" "$proj" "$count"
+      fi
+    done
+  fi
+
   log ""
   if command -v claude >/dev/null 2>&1; then
     log '  note: --apply will run "claude daemon stop --any" first (flushes agent-view state)'
@@ -171,67 +196,52 @@ if [ "$apply" -eq 0 ]; then
   exit 0
 fi
 
-log ""
-log "Applying..."
-
 if command -v claude >/dev/null 2>&1; then
   claude daemon stop --any >/dev/null 2>&1 || warn "claude daemon stop failed"
 else
   warn "claude CLI not found; skipping daemon stop (agent view may show stale entries until restart)"
 fi
 
+total_kb=0
+
 for p in $simple_targets; do
   [ -e "$p" ] || continue
+  total_kb=$((total_kb + $(path_kb "$p")))
   rm -rf -- "$p"
 done
 
 for glob in "/tmp/claude-"* "$HOME/tmp/claude-"*; do
   [ -e "$glob" ] || continue
   if [ -n "$active_session" ] && [ "${active_session#$glob/}" != "$active_session" ]; then
+    total_kb=$((total_kb + $(tmp_kb_excluding_active "$glob" "$active_session")))
     clean_tmp_preserving_active "$glob" "$active_session"
   else
+    total_kb=$((total_kb + $(path_kb "$glob")))
     rm -rf -- "$glob"
   fi
 done
 
 for glob in "/tmp/cc-daemon-"*; do
   [ -e "$glob" ] || continue
+  total_kb=$((total_kb + $(path_kb "$glob")))
   rm -rf -- "$glob"
 done
 
 if [ -d "$proj_root" ]; then
+  proj_kb=$(find "$proj_root" -mindepth 2 \
+    ! -path '*/memory' ! -path '*/memory/*' -print0 2>/dev/null \
+    | du -skc --files0-from=- 2>/dev/null | tail -1 | awk '{print $1}')
+  total_kb=$((total_kb + ${proj_kb:-0}))
   find "$proj_root" -mindepth 2 \
     ! -path '*/memory' \
     ! -path '*/memory/*' \
     -delete 2>/dev/null || true
 fi
 
-log "Pruned."
-log 'Note: restart any running claude instances to refresh the agents view (their in-memory state cannot be cleared externally).'
-log ""
-log "Preserved:"
-for p in \
-  "$C/.credentials.json" \
-  "$C/settings.json" \
-  "$C/settings.local.json" \
-  "$C/statusline-command.sh" \
-  "$C/keybindings.json" \
-  "$C/plugins" \
-  "$C/skills" \
-  "$C/commands" \
-  "$C/agents" \
-  "$C/hooks" \
-  "$C/scripts" \
-  "$C/backups" \
-  "$C/downloads"
-do
-  [ -e "$p" ] && printf '  ok  %s\n' "$p"
-done
-
-if [ -d "$proj_root" ]; then
-  for proj in "$proj_root"/*/; do
-    [ -d "$proj/memory" ] && printf '  ok  %s\n' "$proj/memory" || true
-  done
+if [ -t 1 ]; then
+  printf '\033[1;32mcleared %s\033[0m\n' "$(human_kb "$total_kb")"
+else
+  printf 'cleared %s\n' "$(human_kb "$total_kb")"
 fi
 
 exit 0

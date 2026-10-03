@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Haiku 4.5)
-# Claude Code status line — model, effort, context/rate bars, working directory, git state
+# Claude Code status line — model, effort, context bar, working directory, git state
 
 input=$(cat)
 
@@ -14,9 +14,6 @@ model=$(echo "$input" | jq -r '.model.display_name // "Unknown"')
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // ""')
 effort=$(echo "$input" | jq -r '.effort.level // empty')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
-five_pct=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
-five_reset=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty | strflocaltime("%H:%M")')
-week_pct=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 
 # Progress bar
 bar() {
@@ -30,13 +27,10 @@ bar() {
   printf '%s' "${D}${label}${R} ${col}${bar}${R} ${D}${pct}%${R}"
 }
 
-# Line 1: model, effort, bars
+# Line 1: model, effort, context bar
 line1="${B}${BM}${model}${R}"
 [ -n "$effort" ] && line1+="  ${C}${effort}${R}"
 [ -n "$used_pct" ] && line1+="  $(bar "$(printf "%.0f" "$used_pct")" ctx)"
-[ -n "$five_pct" ] && line1+="  $(bar "$(printf "%.0f" "$five_pct")" 5h)"
-[ -n "$five_pct" ] && [ -n "$five_reset" ] && line1+=" ${D}↻${five_reset}${R}"
-[ -n "$week_pct" ] && line1+="  $(bar "$(printf "%.0f" "$week_pct")" 7d)"
 
 # Line 2: user@host ~ path
 user=$(whoami) host=$(hostname -s) home="$HOME"

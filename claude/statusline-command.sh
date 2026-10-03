@@ -6,46 +6,50 @@ input=$(cat)
 
 # Colors
 R="\033[0m" B="\033[1m" D="\033[2m"
-M="\033[35m" C="\033[36m" Y="\033[33m" G="\033[32m" X="\033[31m" Z="\033[34m"
-BM="\033[95m" BG="\033[92m"
+C="\033[36m" Y="\033[33m" G="\033[32m" X="\033[31m" Z="\033[34m"
+BM="\033[95m" BG="\033[92m" O="\033[38;5;214m"
 
 # Extract fields
 model=$(echo "$input" | jq -r '.model.display_name // "Unknown"')
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // ""')
-effort=$(jq -r '.effortLevel // empty' /home/zero/.claude/settings.json 2>/dev/null)
+effort=$(echo "$input" | jq -r '.effort.level // empty')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
 five_pct=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+five_reset=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty | strflocaltime("%H:%M")')
+week_pct=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 
 # Progress bar
 bar() {
-  local pct=$1 label=$2 w=8 fill=$(( $1 * 8 / 100 )) empty=$(( 8 - fill ))
-  [ $fill -gt 8 ] && fill=8 && empty=0
-  local bar="" col="$G"
+  local pct=$1 label=$2 fill empty bar="" col="$G"
+  fill=$(( pct * 8 / 100 ))
+  [ "$fill" -gt 8 ] && fill=8
+  empty=$(( 8 - fill ))
   for ((i=0; i<fill; i++)); do bar+="▰"; done
   for ((i=0; i<empty; i++)); do bar+="▱"; done
-  [ $pct -ge 80 ] && col="$X" || [ $pct -ge 50 ] && col="$Y"
-  printf "${D}${label}${R} ${col}${bar}${R} ${D}${pct}%${R}"
+  if [ "$pct" -ge 80 ]; then col="$X"; elif [ "$pct" -ge 50 ]; then col="$Y"; fi
+  printf '%s' "${D}${label}${R} ${col}${bar}${R} ${D}${pct}%${R}"
 }
 
 # Line 1: model, effort, bars
-line1="${B}${BM}${model}${R}  ${C}${effort}${R}"
-[ -n "$used_pct" ] && line1+="  $(bar $(printf "%.0f" "$used_pct") ctx)"
-[ -n "$five_pct" ] && line1+="  $(bar $(printf "%.0f" "$five_pct") rate)"
+line1="${B}${BM}${model}${R}"
+[ -n "$effort" ] && line1+="  ${C}${effort}${R}"
+[ -n "$used_pct" ] && line1+="  $(bar "$(printf "%.0f" "$used_pct")" ctx)"
+[ -n "$five_pct" ] && line1+="  $(bar "$(printf "%.0f" "$five_pct")" 5h)"
+[ -n "$five_pct" ] && [ -n "$five_reset" ] && line1+=" ${D}↻${five_reset}${R}"
+[ -n "$week_pct" ] && line1+="  $(bar "$(printf "%.0f" "$week_pct")" 7d)"
 
 # Line 2: user@host ~ path
 user=$(whoami) host=$(hostname -s) home="$HOME"
 display_cwd="${cwd/#$home/\~}"
-line2="${B}${M}${user}@${host}${R} · ${B}${Z}${display_cwd}${R}"
+line2="${B}${O}${user}@${host}${R} · ${B}${Z}${display_cwd}${R}"
 
 # Line 3: git state
+git_q() { git --no-optional-locks -C "$cwd" "$@" 2>/dev/null; }
 git_line=""
-if [ -n "$cwd" ] && git -C "$cwd" rev-parse --is-inside-work-tree --no-optional-locks >/dev/null 2>&1; then
-  branch=$(git -C "$cwd" symbolic-ref --short HEAD 2>/dev/null || git -C "$cwd" rev-parse --short HEAD 2>/dev/null)
-  added=$(git -C "$cwd" diff --numstat --cached --no-optional-locks 2>/dev/null | awk '{s+=$1} END {print s+0}')
-  removed=$(git -C "$cwd" diff --numstat --cached --no-optional-locks 2>/dev/null | awk '{s+=$2} END {print s+0}')
-  added=$(( added + $(git -C "$cwd" diff --numstat --no-optional-locks 2>/dev/null | awk '{s+=$1} END {print s+0}') ))
-  removed=$(( removed + $(git -C "$cwd" diff --numstat --no-optional-locks 2>/dev/null | awk '{s+=$2} END {print s+0}') ))
-  untracked=$(git -C "$cwd" ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d ' ')
+if [ -n "$cwd" ] && git_q rev-parse --is-inside-work-tree >/dev/null; then
+  branch=$(git_q symbolic-ref --short HEAD || git_q rev-parse --short HEAD)
+  read -r added removed < <(git_q diff HEAD --numstat | awk '{a+=$1; r+=$2} END {print a+0, r+0}')
+  untracked=$(git_q ls-files --others --exclude-standard | wc -l | tr -d ' ')
 
   git_line="${B}${Z}${branch}${R}"
   [ "$added" -gt 0 ] && git_line+="  ${BG}+${added}${R}"

@@ -22,7 +22,7 @@ Personal shell and environment bootstrap.
   - `claude/commands/`, `claude/scripts/`, `claude/statusline-command.sh`, `claude/settings.json` -> `~/.claude/`
   - `dev/CLAUDE.md` -> `~/dev/CLAUDE.md`, `dev/HOWTO.md` -> `~/dev/HOWTO.md`
 - reinstalls marketplace plugins declared in `settings.json` via `claude plugin` (needs `claude` + `jq`; skipped with a warning if either is missing). Plugin code itself is never vendored.
-- backs up any existing target file before overwriting it (`.bak.YYYYMMDDHHMMSS` suffix)
+- backs up any existing target before overwriting it to a single `<target>.bak`, replaced on every run
 - fixes FreeBSD's stale `xterm-256color` terminfo (unconditional `setaf`) by compiling a corrected entry into `~/.terminfo` so bold + a base colour renders correctly instead of as a bold font; no-op where already correct
 
 ## One-line install

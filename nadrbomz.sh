@@ -147,7 +147,7 @@ deploy_file() {
   mkdir -p "${target_dir}"
 
   if [ -f "${target}" ] || [ -L "${target}" ]; then
-    backup="${target}.bak.$(date +%Y%m%d%H%M%S)"
+    backup="${target}.bak"
     cp -p "${target}" "${backup}"
     log "Backed up existing ${label} to ${backup}"
   fi
@@ -240,7 +240,8 @@ deploy_tree_from_clone() {
   label="$3"
 
   if [ -d "${target}" ]; then
-    backup="${target}.bak.$(date +%Y%m%d%H%M%S)"
+    backup="${target}.bak"
+    rm -rf "${backup}"
     cp -rp "${target}" "${backup}"
     log "Backed up existing ${label} to ${backup}"
   fi
@@ -258,7 +259,7 @@ deploy_file_from_clone() {
   mkdir -p "$(dirname "${target}")"
 
   if [ -f "${target}" ] || [ -L "${target}" ]; then
-    backup="${target}.bak.$(date +%Y%m%d%H%M%S)"
+    backup="${target}.bak"
     cp -p "${target}" "${backup}"
     log "Backed up existing ${label} to ${backup}"
   fi

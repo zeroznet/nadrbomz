@@ -109,12 +109,18 @@ if [ -f "$HOME/incognito_shell" ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# SSH keychain.
+# SSH agent.
+# Local WSL session: shared fixed-socket agent, passphrase asked once per boot.
+# Bash does not read ~/.zshenv, so the socket is exported here too. Anywhere
+# else: keychain when ~/.ssh/keychain_enabled exists.
 # -----------------------------------------------------------------------------
 
 HOST="${HOST:-${HOSTNAME:-$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo unknown)}}"
 
-if [ -f "$HOME/.ssh/keychain_enabled" ] && command -v keychain >/dev/null 2>&1; then
+if [ -n "${WSL_DISTRO_NAME:-}" ] && [ -z "${SSH_CONNECTION:-}" ]; then
+  export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$UID}/ssh-agent.sock"
+  [ -x "$HOME/.local/bin/ssh-key-ensure" ] && "$HOME/.local/bin/ssh-key-ensure"
+elif [ -f "$HOME/.ssh/keychain_enabled" ] && command -v keychain >/dev/null 2>&1; then
   keychain_args="$(cat "$HOME/.ssh/keychain_enabled")"
   keychain -q $keychain_args
   [ -f "$HOME/.keychain/${HOST}-sh" ] && . "$HOME/.keychain/${HOST}-sh"

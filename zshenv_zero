@@ -1,0 +1,15 @@
+# -----------------------------------------------------------------------------
+# ~/.zshenv
+# Read by every zsh, interactive or not: ~/.local/bin on PATH and the shared
+# ssh-agent socket for local WSL sessions.
+# -----------------------------------------------------------------------------
+
+typeset -U path PATH
+[[ -d "$HOME/.local/bin" ]] && path+=("$HOME/.local/bin")
+export PATH
+
+# Pin SSH_AUTH_SOCK to the fixed socket ssh-key-ensure starts the agent on, so
+# all WT tabs share one agent. SSH logins keep their forwarded agent.
+if [[ -n "${WSL_DISTRO_NAME:-}" && -z "${SSH_CONNECTION:-}" ]]; then
+  export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$UID}/ssh-agent.sock"
+fi

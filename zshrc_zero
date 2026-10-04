@@ -119,10 +119,15 @@ if [[ -f "$HOME/incognito_shell" ]]; then
 fi
 
 # -----------------------------------------------------------------------------
-# SSH keychain.
+# SSH agent.
+# Local WSL session: shared fixed-socket agent (socket from ~/.zshenv),
+# passphrase asked once per boot. Anywhere else: keychain when
+# ~/.ssh/keychain_enabled exists.
 # -----------------------------------------------------------------------------
 
-if [[ -f "$HOME/.ssh/keychain_enabled" ]] && command -v keychain >/dev/null 2>&1; then
+if [[ -n "${WSL_DISTRO_NAME:-}" && -z "${SSH_CONNECTION:-}" ]]; then
+  [[ -x "$HOME/.local/bin/ssh-key-ensure" ]] && "$HOME/.local/bin/ssh-key-ensure"
+elif [[ -f "$HOME/.ssh/keychain_enabled" ]] && command -v keychain >/dev/null 2>&1; then
   keychain_args=$(cat "$HOME/.ssh/keychain_enabled")
   keychain -q $keychain_args
   [[ -f "$HOME/.keychain/${HOST}-sh" ]] && . "$HOME/.keychain/${HOST}-sh"

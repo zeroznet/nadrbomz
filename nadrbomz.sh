@@ -14,6 +14,9 @@ TMUXRC_URL="${BASE_URL}/tmuxrc_zero"
 NVIM_INIT_URL="${BASE_URL}/init.vim_zero"
 FASTFETCH_CONFIG_URL="${BASE_URL}/fastfetch_zero"
 SSH_CONFIG_URL="${BASE_URL}/ssh_config_zero"
+ZSHENV_URL="${BASE_URL}/zshenv_zero"
+SSH_KEY_ENSURE_URL="${BASE_URL}/ssh-key-ensure_zero"
+WT_CONNECT_URL="${BASE_URL}/wt-connect_zero"
 
 NADRBOMZ_CLONE_URL="${NADRBOMZ_CLONE_URL:-https://github.com/zeroznet/nadrbomz.git}"
 CLAUDE_DIR="${HOME}/.claude"
@@ -158,12 +161,30 @@ deploy_file() {
 deploy_dotfiles() {
   deploy_file "${SHELL_ALIASES_URL}" "${HOME}/.shell_aliases" ".shell_aliases"
   deploy_file "${ZSHRC_URL}" "${HOME}/.zshrc" ".zshrc"
+  deploy_file "${ZSHENV_URL}" "${HOME}/.zshenv" ".zshenv"
   deploy_file "${BASHRC_URL}" "${HOME}/.bashrc" ".bashrc"
   deploy_file "${SCREENRC_URL}" "${HOME}/.screenrc" ".screenrc"
   deploy_file "${TMUXRC_URL}" "${HOME}/.tmux.conf" ".tmux.conf"
   deploy_file "${NVIM_INIT_URL}" "${HOME}/.config/nvim/init.vim" "init.vim"
   deploy_file "${FASTFETCH_CONFIG_URL}" "${HOME}/.config/fastfetch/config.jsonc" "fastfetch config"
   deploy_file "${SSH_CONFIG_URL}" "${HOME}/.ssh/config" "ssh config"
+}
+
+is_wsl() {
+  # Kernel string, not WSL_DISTRO_NAME: sshd does not pass that variable, and
+  # the deploy decision is about the machine, not the session.
+  grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null
+}
+
+deploy_wsl_scripts() {
+  if ! is_wsl; then
+    log "Not WSL, skipping ssh-key-ensure and wt-connect."
+    return 0
+  fi
+
+  deploy_file "${SSH_KEY_ENSURE_URL}" "${HOME}/.local/bin/ssh-key-ensure" "ssh-key-ensure"
+  deploy_file "${WT_CONNECT_URL}" "${HOME}/.local/bin/wt-connect" "wt-connect"
+  chmod +x "${HOME}/.local/bin/ssh-key-ensure" "${HOME}/.local/bin/wt-connect"
 }
 
 fix_terminfo_setaf() {
@@ -326,6 +347,7 @@ main() {
   sync_git_repo "${AUTOSUGGEST_REPO}" "${AUTOSUGGEST_DIR}" "zsh-autosuggestions"
 
   deploy_dotfiles
+  deploy_wsl_scripts
 
   deploy_claude_config
   bootstrap_claude_plugins

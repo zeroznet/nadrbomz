@@ -57,12 +57,14 @@ alias su='su -'
 # Log viewer.
 # Linux: follow the last hour of the journal as JSON through lnav.
 # FreeBSD: same for /var/log/all; tail -F keeps following across newsyslog
-# rotations, and lnav hides lines older than the hour before start.
+# rotations, and lnav hides lines older than the hour before start. tail is fed
+# through process substitution, not a pipe: BSD tail only notices lnav is gone
+# on its next write, and the shell would wait for it after q.
 # -----------------------------------------------------------------------------
 
 case "$(uname -s)" in
   Linux)   alias slog='sudo journalctl --since "1 hour ago" -f -o json | lnav' ;;
-  FreeBSD) alias slog='sudo tail -F -n +1 /var/log/all | lnav -c ":hide-lines-before $(date -v-1H "+%Y-%m-%d %H:%M:%S")"' ;;
+  FreeBSD) alias slog='lnav -c ":hide-lines-before $(date -v-1H "+%Y-%m-%d %H:%M:%S")" <(sudo tail -F -n +1 /var/log/all)' ;;
 esac
 
 # -----------------------------------------------------------------------------

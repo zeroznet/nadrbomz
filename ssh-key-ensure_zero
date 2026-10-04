@@ -1,0 +1,43 @@
+#!/usr/bin/env sh
+# scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Fable 5.1)
+# Ensure the shared ssh-agent (fixed socket, also exported by ~/.zshenv and
+# ~/.bashrc) is up and holds the key. Every WT tab (local via the rc files,
+# remote via wt-connect) runs this, so the passphrase is asked exactly once per
+# boot: the load lock serializes tabs, the first one prompts, the rest wait and
+# find the key already loaded.
+set -u
+
+die() {
+  printf 'ssh-key-ensure: %s\n' "$*" >&2
+  exit 1
+}
+
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/ssh-agent.sock"
+lock_dir="$(dirname "$SSH_AUTH_SOCK")"
+key="$HOME/.ssh/id_ed25519"
+
+[ -r "$key" ] || die "missing SSH key: $key"
+[ -w "$lock_dir" ] ||
+  die "cannot start ssh-agent at $SSH_AUTH_SOCK (directory $lock_dir missing or not writable)"
+
+# ssh-add -l exits 2 when no agent answers on the socket, 1 when the agent
+# holds no identities, 0 when it holds some.
+{
+  flock 9
+  ssh-add -l >/dev/null 2>&1
+  if [ $? -eq 2 ]; then
+    rm -f "$SSH_AUTH_SOCK"
+    ssh-agent -a "$SSH_AUTH_SOCK" >/dev/null 2>&1
+  fi
+} 9>"$lock_dir/ssh-agent-start.lock"
+
+ssh-add -l >/dev/null 2>&1
+case $? in
+  0) exit 0 ;;
+  2) die "cannot start ssh-agent at $SSH_AUTH_SOCK" ;;
+esac
+
+{
+  flock -n 9 || { echo "waiting for ssh key: another tab is asking for the passphrase..."; flock 9; }
+  ssh-add -l >/dev/null 2>&1 || ssh-add "$key"
+} 9>"$lock_dir/ssh-key-load.lock"

@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+# scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Opus 4.8)
+# Connect a remote WT tab: make sure the shared ssh-agent holds the key
+# (ssh-key-ensure, prompts here in plain sh if needed), then run the ssh alias.
+# Invoked by the remote WT profiles as: wt-connect <ssh-alias>.
+set -u
+
+usage() {
+  echo "usage: wt-connect <ssh-alias>" >&2
+  exit 2
+}
+
+[ $# -eq 1 ] || usage
+[ "$1" = "--help" ] && usage
+
+target=$1
+"$HOME/.local/bin/ssh-key-ensure"
+exec zsh -ic "$target"

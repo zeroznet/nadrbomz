@@ -37,6 +37,11 @@ case $? in
   2) die "cannot start ssh-agent at $SSH_AUTH_SOCK" ;;
 esac
 
+# Without a terminal (editor env probes, zsh -i from a pipe) ssh-add would block
+# on stdin while holding the load lock and stall every tab; the next real tab
+# prompts instead.
+[ -t 0 ] || exit 0
+
 {
   flock -n 9 || { echo "waiting for ssh key: another tab is asking for the passphrase..."; flock 9; }
   ssh-add -l >/dev/null 2>&1 || ssh-add "$key"

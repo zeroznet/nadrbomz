@@ -45,16 +45,64 @@ pause() {
   fi
 }
 
-log() {
-  printf '%s»%s %s\n' "$(sgr '1;38;5;45')" "$(sgr 0)" "$*"
+SECTION_TOTAL=6
+SECTION_INDEX=0
+OK_COUNT=0
+SKIP_COUNT=0
+WARN_COUNT=0
+
+# A step_begin placeholder may still sit on the line; wipe it before printing.
+clear_line() {
+  if [ -n "${ESC}" ]; then
+    printf '\r%s[K' "${ESC}"
+  fi
+}
+
+tilde() {
+  case "$1" in
+    "${HOME}"/*) printf '~%s' "${1#"${HOME}"}" ;;
+    *)           printf '%s' "$1" ;;
+  esac
+}
+
+print_status() {
+  clear_line
+  printf '   %s[%s]%s  %-22s %s%s%s\n' "$(sgr "1;38;5;$2")" "$1" "$(sgr 0)" "$3" "$(sgr '38;5;244')" "$4" "$(sgr 0)"
+}
+
+step_begin() {
+  if [ -n "${ESC}" ]; then
+    printf '   %s[....]%s  %s' "$(sgr '38;5;240')" "$(sgr 0)" "$1"
+  fi
+}
+
+report_ok() {
+  OK_COUNT=$((OK_COUNT + 1))
+  print_status ' OK ' 46 "$1" "$2"
+}
+
+report_skip() {
+  SKIP_COUNT=$((SKIP_COUNT + 1))
+  print_status 'SKIP' 244 "$1" "$2"
+}
+
+print_section() {
+  SECTION_INDEX=$((SECTION_INDEX + 1))
+  spaced="$(printf '%s' "$1" | sed 's/./& /g; s/ $//')"
+  printf '\n  %s▓▒░%s %02d/%02d %s░▒▓%s  %s%s%s\n' \
+    "$(sgr '38;5;57')" "$(sgr '1;38;5;213')" "${SECTION_INDEX}" "${SECTION_TOTAL}" "$(sgr '38;5;57')" "$(sgr 0)" \
+    "$(sgr '1;38;5;51')" "${spaced}" "$(sgr 0)"
 }
 
 warn() {
-  printf '%s[!] WARNING:%s %s\n' "$(sgr '1;38;5;214')" "$(sgr 0)" "$*" >&2
+  WARN_COUNT=$((WARN_COUNT + 1))
+  clear_line
+  printf '   %s[WARN]%s  %s\n' "$(sgr '1;38;5;214')" "$(sgr 0)" "$*" >&2
 }
 
 die() {
-  printf '%s[x] ERROR:%s %s\n' "$(sgr '1;38;5;196')" "$(sgr 0)" "$*" >&2
+  clear_line
+  printf '   %s[FAIL]%s  %s\n' "$(sgr '1;38;5;196')" "$(sgr 0)" "$*" >&2
   exit 1
 }
 
@@ -127,12 +175,19 @@ install_ohmyzsh() {
   install_url="https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
 
   if [ -d "${OHMYZSH_DIR}" ]; then
-    log "Oh My Zsh already exists, skipping install."
+    report_skip "oh-my-zsh" "already installed"
     return 0
   fi
 
-  log "Installing Oh My Zsh..."
-  CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL "${install_url}")" "" --unattended
+  step_begin "oh-my-zsh"
+  # The installer reports its own failures on stdout, so keep its output and
+  # replay it only when it fails.
+  if ! omz_output="$(CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL "${install_url}")" "" --unattended 2>&1)"; then
+    clear_line
+    printf '%s\n' "${omz_output}" >&2
+    die "Oh My Zsh install failed"
+  fi
+  report_ok "oh-my-zsh" "installed"
 }
 
 sync_git_repo() {
@@ -140,13 +195,20 @@ sync_git_repo() {
   repo_dir="$2"
   repo_name="$3"
 
+  step_begin "${repo_name}"
   if [ -d "${repo_dir}/.git" ]; then
-    log "Updating ${repo_name}..."
-    git -C "${repo_dir}" pull --ff-only
+    rev_before="$(git -C "${repo_dir}" rev-parse --short HEAD)"
+    git -C "${repo_dir}" pull -q --ff-only
+    rev_after="$(git -C "${repo_dir}" rev-parse --short HEAD)"
+    if [ "${rev_before}" = "${rev_after}" ]; then
+      report_skip "${repo_name}" "up to date @ ${rev_after}"
+    else
+      report_ok "${repo_name}" "updated ${rev_before} -> ${rev_after}"
+    fi
   else
-    log "Installing ${repo_name}..."
     rm -rf "${repo_dir}"
-    git clone --depth 1 "${repo_url}" "${repo_dir}"
+    git clone -q --depth 1 "${repo_url}" "${repo_dir}"
+    report_ok "${repo_name}" "cloned @ $(git -C "${repo_dir}" rev-parse --short HEAD)"
   fi
 }
 
@@ -158,22 +220,23 @@ deploy_file() {
   tmp_file="$(mktemp "${TMPDIR:-/tmp}/dotfile.XXXXXX")"
   trap 'rm -f "${tmp_file}"' EXIT HUP INT TERM
 
-  log "Downloading ${label} from GitHub..."
+  step_begin "${label}"
   download_file "${url}" "${tmp_file}"
 
   target_dir="$(dirname "${target}")"
   mkdir -p "${target_dir}"
 
+  backup_note=""
   if [ -f "${target}" ] || [ -L "${target}" ]; then
     backup="${target}.bak"
     cp -p "${target}" "${backup}"
-    log "Backed up existing ${label} to ${backup}"
+    backup_note=" +bak"
   fi
 
   mv "${tmp_file}" "${target}"
   trap - EXIT HUP INT TERM
 
-  log "Installed ${target}"
+  report_ok "${label}" "$(tilde "${target}")${backup_note}"
 }
 
 deploy_dotfiles() {
@@ -196,7 +259,8 @@ is_wsl() {
 
 deploy_wsl_scripts() {
   if ! is_wsl; then
-    log "Not WSL, skipping ssh-key-ensure and wt-connect."
+    report_skip "ssh-key-ensure" "not WSL"
+    report_skip "wt-connect" "not WSL"
     return 0
   fi
 
@@ -213,16 +277,16 @@ fix_terminfo_setaf() {
   # setaf: legacy \E[3Nm for colours 0-7) into ~/.terminfo, which tinfo reads
   # before /etc/termcap. No-op where setaf is already correct (e.g. Linux).
   if ! has_cmd infocmp || ! has_cmd tic; then
-    log "infocmp/tic missing, skipping terminfo fix."
+    report_skip "xterm-256color" "infocmp/tic missing"
     return 0
   fi
 
   if ! infocmp xterm-256color 2>/dev/null | grep -q 'setaf=\\E\[38;5;%p1%dm'; then
-    log "Terminfo xterm-256color already correct, skipping."
+    report_skip "xterm-256color" "terminfo already correct"
     return 0
   fi
 
-  log "Patching xterm-256color terminfo (conditional setaf) into ~/.terminfo..."
+  step_begin "xterm-256color"
   ti_src="$(mktemp "${TMPDIR:-/tmp}/terminfo.XXXXXX")"
   trap 'rm -f "${ti_src}"' EXIT HUP INT TERM
   infocmp -x xterm-256color | sed \
@@ -232,7 +296,7 @@ fix_terminfo_setaf() {
   tic -x "${ti_src}"
   rm -f "${ti_src}"
   trap - EXIT HUP INT TERM
-  log "Installed corrected xterm-256color to ~/.terminfo"
+  report_ok "xterm-256color" "conditional setaf patched into ~/.terminfo"
 }
 
 print_rule() {
@@ -293,6 +357,12 @@ print_outro() {
     "$(sgr '38;5;213')" "$(sgr '1;38;5;231')" "$(sgr '38;5;39')" "$(sgr 0)"
   print_rule 57 '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀'
   printf '\n'
+  printf '     %sSCOREBOARD%s\n' "$(sgr '1;38;5;213')" "$(sgr 0)"
+  print_info_row 'DEPLOYED ...... ' "${OK_COUNT}"
+  print_info_row 'SKIPPED ....... ' "${SKIP_COUNT}"
+  print_info_row 'WARNINGS ...... ' "${WARN_COUNT}"
+  print_info_row 'RUNTIME ....... ' "${1}s"
+  printf '\n'
   printf '     %sNEXT MOVES%s\n' "$(sgr '1;38;5;213')" "$(sgr 0)"
   print_info_row 'START ZSH ..... ' 'exec zsh'
   print_info_row 'LOGIN SHELL ... ' "${chsh_cmd}"
@@ -308,16 +378,17 @@ deploy_tree_from_clone() {
   target="$2"
   label="$3"
 
+  backup_note=""
   if [ -d "${target}" ]; then
     backup="${target}.bak"
     rm -rf "${backup}"
     cp -rp "${target}" "${backup}"
-    log "Backed up existing ${label} to ${backup}"
+    backup_note=" +bak"
   fi
 
   mkdir -p "${target}"
   cp -r "${src}/." "${target}/"
-  log "Synced ${label} into ${target}"
+  report_ok "${label}" "$(tilde "${target}")/${backup_note}"
 }
 
 deploy_file_from_clone() {
@@ -327,28 +398,30 @@ deploy_file_from_clone() {
 
   mkdir -p "$(dirname "${target}")"
 
+  backup_note=""
   if [ -f "${target}" ] || [ -L "${target}" ]; then
     backup="${target}.bak"
     cp -p "${target}" "${backup}"
-    log "Backed up existing ${label} to ${backup}"
+    backup_note=" +bak"
   fi
 
   cp "${src}" "${target}"
-  log "Installed ${target}"
+  report_ok "${label}" "$(tilde "${target}")${backup_note}"
 }
 
 deploy_claude_config() {
   clone_dir="$(mktemp -d "${TMPDIR:-/tmp}/nadrbomz-clone.XXXXXX")"
   trap 'rm -rf "${clone_dir}"' EXIT HUP INT TERM
 
-  log "Cloning nadrbomz for Claude config..."
-  git clone --depth 1 "${NADRBOMZ_CLONE_URL}" "${clone_dir}"
+  step_begin "nadrbomz repo"
+  git clone -q --depth 1 "${NADRBOMZ_CLONE_URL}" "${clone_dir}"
+  report_ok "nadrbomz repo" "cloned @ $(git -C "${clone_dir}" rev-parse --short HEAD)"
 
-  deploy_tree_from_clone "${clone_dir}/claude/skills"   "${CLAUDE_DIR}/skills"   "Claude skills"
-  deploy_tree_from_clone "${clone_dir}/claude/commands" "${CLAUDE_DIR}/commands" "Claude commands"
-  deploy_tree_from_clone "${clone_dir}/claude/scripts"  "${CLAUDE_DIR}/scripts"  "Claude scripts"
-  deploy_file_from_clone "${clone_dir}/claude/statusline-command.sh" "${CLAUDE_DIR}/statusline-command.sh" "Claude statusline"
-  deploy_file_from_clone "${clone_dir}/claude/settings.json" "${CLAUDE_DIR}/settings.json" "Claude settings.json"
+  deploy_tree_from_clone "${clone_dir}/claude/skills"   "${CLAUDE_DIR}/skills"   "skills"
+  deploy_tree_from_clone "${clone_dir}/claude/commands" "${CLAUDE_DIR}/commands" "commands"
+  deploy_tree_from_clone "${clone_dir}/claude/scripts"  "${CLAUDE_DIR}/scripts"  "scripts"
+  deploy_file_from_clone "${clone_dir}/claude/statusline-command.sh" "${CLAUDE_DIR}/statusline-command.sh" "statusline"
+  deploy_file_from_clone "${clone_dir}/claude/settings.json" "${CLAUDE_DIR}/settings.json" "settings.json"
 
   deploy_file_from_clone "${clone_dir}/dev/CLAUDE.md" "${DEV_DIR}/CLAUDE.md" "workspace CLAUDE.md"
   deploy_file_from_clone "${clone_dir}/dev/HOWTO.md"  "${DEV_DIR}/HOWTO.md"  "workspace HOWTO.md"
@@ -361,7 +434,7 @@ deploy_claude_config() {
 
 bootstrap_claude_plugins() {
   if ! has_cmd claude; then
-    log "claude CLI not found, skipping plugin bootstrap."
+    report_skip "plugins" "claude CLI not found"
     return 0
   fi
   if ! has_cmd jq; then
@@ -371,61 +444,88 @@ bootstrap_claude_plugins() {
 
   settings="${CLAUDE_DIR}/settings.json"
   if [ ! -f "${settings}" ]; then
-    log "No settings.json found, skipping plugin bootstrap."
+    report_skip "plugins" "no settings.json"
     return 0
   fi
 
-  # set -o pipefail is active, so a jq failure on a malformed settings.json
-  # would propagate through the pipelines below and abort the installer under
-  # set -e. Validate up front and skip rather than letting bootstrap kill the run.
+  # A jq failure inside the here-docs below would silently read as "no entries",
+  # so a malformed settings.json is caught up front and reported instead.
   if ! jq empty "${settings}" 2>/dev/null; then
     warn "settings.json is not valid JSON, skipping plugin bootstrap."
     return 0
   fi
 
+  # Loops read here-docs instead of pipes so they run in this shell and the
+  # report counters survive for the outro stats.
   known="${CLAUDE_DIR}/plugins/known_marketplaces.json"
-  log "Syncing extra marketplaces..."
-  jq -r '.extraKnownMarketplaces // {} | to_entries[] | "\(.key) \(.value.source.repo // "")"' "${settings}" |
+  present=0
   while read -r name repo; do
     [ -n "${repo}" ] || continue
     if [ -f "${known}" ] && jq -e --arg n "${name}" 'has($n)' "${known}" >/dev/null 2>&1; then
+      present=$((present + 1))
       continue
     fi
-    log "  marketplace add ${repo}"
-    claude plugin marketplace add "${repo}" >/dev/null 2>&1 || warn "  marketplace add ${repo} failed"
-  done
+    step_begin "${name}"
+    if claude plugin marketplace add "${repo}" >/dev/null 2>&1; then
+      report_ok "${name}" "marketplace added"
+    else
+      warn "marketplace add ${repo} failed"
+    fi
+  done <<EOF
+$(jq -r '.extraKnownMarketplaces // {} | to_entries[] | "\(.key) \(.value.source.repo // "")"' "${settings}")
+EOF
+  if [ "${present}" -gt 0 ]; then
+    report_skip "marketplaces" "${present} already registered"
+  fi
 
   installed="${CLAUDE_DIR}/plugins/installed_plugins.json"
-  log "Syncing enabled plugins..."
-  jq -r '.enabledPlugins // {} | to_entries[] | select(.value == true) | .key' "${settings}" |
+  present=0
   while IFS= read -r plugin; do
     [ -n "${plugin}" ] || continue
     if [ -f "${installed}" ] && jq -e --arg p "${plugin}" '.plugins | has($p)' "${installed}" >/dev/null 2>&1; then
+      present=$((present + 1))
       continue
     fi
-    log "  install ${plugin}"
-    claude plugin install "${plugin}" >/dev/null 2>&1 || warn "  install ${plugin} failed"
-  done
+    step_begin "${plugin%@*}"
+    if claude plugin install "${plugin}" >/dev/null 2>&1; then
+      report_ok "${plugin%@*}" "installed from ${plugin#*@}"
+    else
+      warn "install ${plugin} failed"
+    fi
+  done <<EOF
+$(jq -r '.enabledPlugins // {} | to_entries[] | select(.value == true) | .key' "${settings}")
+EOF
+  if [ "${present}" -gt 0 ]; then
+    report_skip "plugins" "${present} already installed"
+  fi
 }
 
 main() {
+  started_at="$(date +%s)"
   print_intro
   check_prereqs
 
+  print_section "SHELL CORE"
   install_ohmyzsh
-
   mkdir -p "${ZSH_CUSTOM_DIR}/plugins"
   sync_git_repo "${AUTOSUGGEST_REPO}" "${AUTOSUGGEST_DIR}" "zsh-autosuggestions"
 
+  print_section "DOTFILES"
   deploy_dotfiles
+
+  print_section "WSL TOOLS"
   deploy_wsl_scripts
 
+  print_section "CLAUDE CONFIG"
   deploy_claude_config
+
+  print_section "CLAUDE PLUGINS"
   bootstrap_claude_plugins
 
+  print_section "TERMINAL"
   fix_terminfo_setaf
 
-  print_outro
+  print_outro "$(($(date +%s) - started_at))"
 }
 
 main "$@"

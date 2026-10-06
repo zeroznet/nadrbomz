@@ -23,7 +23,7 @@ Personal shell and environment bootstrap.
   - `dev/CLAUDE.md` -> `~/dev/CLAUDE.md`, `dev/HOWTO.md` -> `~/dev/HOWTO.md`
 - reinstalls marketplace plugins declared in `settings.json` via `claude plugin` (needs `claude` + `jq`; skipped with a warning if either is missing). Plugin code itself is never vendored.
 - backs up any existing target before overwriting it to a single `<target>.bak`, replaced on every run
-- opens with a scene-style intro (logo, release info) and closes with an outro listing the next steps; colours and the short reveal delays only apply on a TTY and are skipped when `NO_COLOR` is set, `TERM=dumb`, or output is piped
+- opens with a scene-style intro (logo, release info), reports progress as numbered sections with one `[ OK ]` / `[SKIP]` / `[WARN]` line per item (git and installer chatter stays quiet unless something fails), and closes with an outro showing the deployed/skipped/warning counts, runtime and next steps; colours and the short reveal delays only apply on a TTY and are skipped when `NO_COLOR` is set, `TERM=dumb`, or output is piped
 - fixes FreeBSD's stale `xterm-256color` terminfo (unconditional `setaf`) by compiling a corrected entry into `~/.terminfo` so bold + a base colour renders correctly instead of as a bold font; no-op where already correct
 
 ## One-line install

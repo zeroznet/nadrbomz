@@ -4,6 +4,14 @@ Generate **several radically different UI variations**, switchable from a floati
 
 If the question is about logic/state rather than what something looks like — wrong branch. Use [LOGIC.md](LOGIC.md).
 
+## Contents
+- When this is the right shape
+- Pick a delivery mode (route-based or Artifact page)
+- Two sub-shapes (route-based): existing page, new page
+- Artifact page delivery (no dev server)
+- Process: question and N, variants, wiring, floating switcher, hand-over, cleanup
+- Anti-patterns
+
 ## When this is the right shape
 
 - "What should this page look like?"
@@ -45,7 +53,7 @@ When the project has nothing to run — no dev server, no web app to plug a rout
 - Each variant is a section or render function inside that one file, held to the same "structurally different" bar as route-based variants — see "Generate radically different variants" below. A single-file constraint is not license to make the variants look alike.
 - Data is stubbed inline (representative sample values), since there's no backend to fetch from — same as any prototype under "No persistence by default."
 - The switcher is the same floating bottom-bar concept as route-based delivery (left arrow / variant label / right arrow, keyboard-cyclable), just implemented in plain JS instead of a shared component — there's only one file, so it lives directly in it.
-- The file lives in the **scratchpad directory**, never in the project tree. Load the `artifact-design` skill before writing it (the Artifact tool requires this), then publish with the Artifact tool. The published URL is the artifact — nothing gets committed.
+- The file lives in the **scratchpad directory**, never in the project tree. Prepare and publish it by following the Artifact tool's own current instructions, not from memory; its contract changes. The published URL is the artifact — nothing gets committed.
 - There's no "production build" to hide the switcher from, so skip the `NODE_ENV` gating that route-based delivery needs — but the local file being throwaway doesn't make the published page throwaway too. It starts private but persists as a hosted URL on claude.ai until someone deletes it; see step 6 below for cleanup.
 
 ## Process
@@ -132,7 +140,7 @@ Once a variant has won, write down which one and why (commit message, ADR, issue
 
 - **Sub-shape A** — delete the losing variants and the switcher; fold the winner into the existing page.
 - **Sub-shape B** — promote the winning variant to a real route, delete the throwaway route and the switcher.
-- **Artifact page** — nothing to delete from the repo; the file only ever lived in the scratchpad directory. Rebuild the winner properly as real code — the artifact's markup was written under prototype constraints, not folded in directly. The published page itself is separate from the local file: it stays on claude.ai after the file is gone, so either remind the user to delete it from their claude.ai artifacts gallery (Claude cannot delete it from the CLI), or explicitly decide to keep it as the record of the answer.
+- **Artifact page** — nothing to delete from the repo; the file only ever lived in the scratchpad directory. Rebuild the winner properly as real code — the artifact's markup was written under prototype constraints, not folded in directly. The published page itself is separate from the local file: it stays on claude.ai after the file is gone, so ask the user whether to delete it (the Artifact tool's `delete` action, which they confirm) or keep it as the record of the answer.
 
 Don't leave variant components or the switcher lying around. They rot fast and confuse the next reader.
 

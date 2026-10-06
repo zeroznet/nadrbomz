@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: Use when the user wants to validate a design before committing to it — a state machine, data model, API shape, or UI layout that's hard to judge on paper. Routes between two branches: a terminal TUI for logic/state questions, or several radically different UI variants on one route for visual questions.
+description: Builds throwaway code that answers one design question before committing to it, either a tiny interactive terminal app for state machine, data model, or API logic questions, or several radically different UI variants behind a switcher for visual questions. Use when a design is hard to judge on paper, or when the user says "/prototype", "prototype this", "let me play with it", "try a few designs", or "I want to feel this out".
 ---
 
 # prototype
@@ -8,13 +8,6 @@ description: Use when the user wants to validate a design before committing to i
 ## Purpose
 
 A prototype is **throwaway code that answers a question.** The question decides the shape. Logic questions (does this state machine handle the edge cases?) get a tiny interactive TUI. Visual questions (what should this look like?) get N radically different variants on one route. Either way, the artifact is disposable; the *answer* is what's worth keeping.
-
-## When to use
-
-- Robert says `/prototype`, "prototype this", "let me play with it", "try a few designs", "I want to feel this out".
-- A design decision is hard to judge without driving it — state transitions you can't reason about on paper, layouts you can't pick from a description.
-- Sanity-checking a data model or API shape before committing.
-- The cost of building the real thing wrong is higher than the cost of throwing a prototype away.
 
 ## When NOT to use
 
@@ -61,13 +54,6 @@ If the user is around, that capture is a quick conversation. If not, leave a `NO
 - **Promoting prototype code directly to production.** It was written under prototype constraints. Re-write the part worth keeping; do not lift the throwaway shell.
 - **Letting it linger.** A prototype still in the repo a week after it answered its question is rot. Delete or absorb.
 - **Picking the wrong branch.** A logic question answered with UI variants, or a UI question answered with a TUI, wastes the whole effort. Re-read the "Pick a branch" rule before writing code.
-
-## Quick reference
-
-| Question | Branch | Artifact |
-|---|---|---|
-| State / logic / data model | [LOGIC.md](LOGIC.md) | tiny TUI driving a portable logic module |
-| Look / layout / visual | [UI.md](UI.md) | N variants on one route (default) or a single published Artifact page (no dev server), floating switcher bar |
 
 ## Hand off
 

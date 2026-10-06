@@ -1,7 +1,8 @@
 ---
 name: handoff
-description: Use when ending a session to write a handoff for a future session (default), or with --apply to restore context from an existing HANDOFF.md in cwd.
+description: Writes HANDOFF.md in cwd so a fresh session can continue without the transcript. It holds a reference map of every file and URL the next session needs, plus goal, decisions, current state, gotchas, next steps, and open questions. With --apply, reads an existing HANDOFF.md back as context instead. Run at session end (after /calibrate), or with --apply at the start of the next one.
 argument-hint: "[--apply] [focus the next session will pick up]"
+disable-model-invocation: true
 ---
 
 # handoff
@@ -13,7 +14,7 @@ Bridge sessions, nothing more. Two modes:
 - **Write mode (default).** End-of-session: capture the *durable* output (decisions, current state, next move) into `$PWD/HANDOFF.md` and print it into chat, so a fresh session — or the current one — can pick it up without reading the transcript.
 - **Restore mode (`--apply`).** Start-of-session: read back an existing `$PWD/HANDOFF.md` as context.
 
-Folding session content into the project's own canonical files (TODO.md, CLAUDE.md, runbooks, memory) is not this skill's job — that's `calibrate` now. See the pointer at the end of this doc.
+Folding session content into the project's own canonical files (TODO.md, CLAUDE.md, runbooks, memory) is `calibrate`'s job, not this skill's.
 
 A handoff is **not** a chronology, recap, or compact summary.
 
@@ -36,16 +37,13 @@ There is no auto-detection of an empty session; restore only runs when `--apply`
 
 ### Sibling scan
 
-Before drafting, always run a sibling-scan pass:
+Before drafting, enumerate `*.md` in cwd, shallow only (no subdirectories), excluding `HANDOFF.md` itself:
 
-1. Enumerate `*.md` in cwd, shallow only (no subdirectories), excluding `HANDOFF.md` itself:
-   ```sh
-   find . -maxdepth 1 -type f -name '*.md' ! -name HANDOFF.md
-   ```
-2. Read each file fully.
-3. In #0 Reference map, list every consulted file with a leading `✓` marker and a one-line note on what it covers. The `✓` distinguishes "I read this file this session" from files merely referenced.
-4. While drafting #1–#6, if a fact is already documented in a consulted file, replace the restatement with a pointer (`see PLAN.md #3`). A one-sentence summary plus pointer is fine; anything longer becomes a pointer only.
-5. Add a dedup pass to the Procedure (see step 4 below).
+```sh
+find . -maxdepth 1 -type f -name '*.md' ! -name HANDOFF.md
+```
+
+Read each file fully. Every one goes into #0 with a `✓` marker; facts they already document become pointers during the dedup pass (Procedure step 4).
 
 ### Focus argument (optional)
 
@@ -63,23 +61,20 @@ When a focus is present:
 
 Without a focus, write the handoff as the durable snapshot it is and let #7 suggest skills based on the leftover state.
 
-### Output target
+### Git exclude
 
-- Write the handoff to `$PWD/HANDOFF.md` (overwrite if present).
-- Print the full document to chat inside a ```` ```markdown ```` fenced block, right after writing the file.
-- After that, give a one-line confirmation: path written, consulted file count, plus a short list of repos whose `.gitignore` was updated.
-
-### Gitignore (after writing the file)
-
-For every git repo found under cwd:
+Keep HANDOFF.md out of git without touching any tracked file. Only the repo that contains `$PWD` matters; when cwd is in no repo, this is a no-op. Run exactly:
 
 ```sh
-find . -type d -name .git -prune | sed 's|/\.git$||'
+if exclude="$(git rev-parse --git-path info/exclude 2>/dev/null)"; then
+  mkdir -p "$(dirname "$exclude")"
+  for pattern in HANDOFF.md HANDOFF.md.bak; do
+    grep -qxF "$pattern" "$exclude" 2>/dev/null || printf '%s\n' "$pattern" >> "$exclude"
+  done
+fi
 ```
 
-For each repo:
-1. If its `.gitignore` does not already contain a line `HANDOFF.md`, append one. Same check for `HANDOFF.md.bak` — append if missing. The `.bak` line is needed because restore mode leaves a single-level backup behind.
-2. Note updated repos in the confirmation line. **No git add, no commit, no push.**
+The `.bak` line covers the single-level backup restore mode leaves behind. **No git add, no commit, no push.**
 
 ### What to include in HANDOFF.md
 
@@ -147,7 +142,7 @@ Skip the section entirely if nothing useful comes to mind — empty pointers are
 
 ### Procedure
 
-1. Run the sibling scan from above: enumerate `*.md` shallow in cwd, read each, prepare the `✓`-marked entries for #0.
+1. Run the sibling scan above and prepare the `✓`-marked entries for #0.
 2. Mentally scan the session for decisions, state changes, and constraints. Ignore everything else.
 3. Draft the document in the structure above.
 4. **Dedup pass.** Walk the draft line by line. For each fact, check whether it is already documented in a consulted file. If yes, replace with a pointer (`see PLAN.md #3`). A one-sentence summary plus pointer is fine; longer restatements collapse to pointer only. Never delete a path during dedup — paths are exempt.
@@ -163,8 +158,8 @@ Skip the section entirely if nothing useful comes to mind — empty pointers are
 
    This check overrides the "cut anything that isn't durable" rule from step 5. Paths are exempt from that filter.
 7. Write the result to `$PWD/HANDOFF.md` (overwrite if present), then print the full document to chat inside a ```` ```markdown ```` fenced block.
-8. Update `.gitignore` for each git repo under cwd as described above. No commit, no push.
-9. Reply with one line: `wrote HANDOFF.md; consulted N md file(s); gitignore updated in: <repo list>` (or `gitignore already up to date` if none changed).
+8. Run the git exclude snippet above. No commit, no push.
+9. Reply with one line: `wrote HANDOFF.md; consulted N md file(s); git exclude: <added|already set|not in a repo>`.
 
 ### Example
 
@@ -172,9 +167,10 @@ A minimal good handoff (illustrative, not a template to copy literally):
 
 ```markdown
 ## 0. Reference map
+- ✓ `CLAUDE.md` — repo conventions; #"Commits" governs the commit style used here
+- ✓ `TODO.md` — scanned, nothing relevant
 - `specs/auth-rotation.md` #3.2 — token-rotation contract; this session implemented #3.2 case (b) only
 - `runbooks/incident-2026-04-12-auth.md` — postmortem the rotation work derives from (frozen)
-- `CLAUDE.md` — repo conventions; #"Commits" governs the commit style used here
 - `src/auth/rotator.ts` — new module added this session
 - `src/auth/index.ts` — entrypoint, now re-exports `rotateToken`
 - https://dash.internal/auth-latency — oncall dashboard; rotation should not regress p99
@@ -195,7 +191,7 @@ Land token rotation per `specs/auth-rotation.md` #3.2(b), without regressing the
 3. Verify p99 on the dashboard URL above before merging.
 ```
 
-Notice: #0 lists paths first, every later section refers back to those paths by relative position (#3.2, file paths, dashboard URL), and frozen docs are cited normally.
+Notice: #0 lists paths first with the scanned `*.md` marked `✓`, every later section refers back to those paths by relative position (#3.2, file paths, dashboard URL), and frozen docs are cited normally.
 
 ## Hand off
 

@@ -340,7 +340,7 @@ print_intro() {
   print_info_row 'CRACKED BY .... ' 'Boba Bott'
   print_info_row 'PROTECTION .... ' 'none, we checked'
   printf '\n'
-  pause 0.3
+  pause 3
 }
 
 print_outro() {

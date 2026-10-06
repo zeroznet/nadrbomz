@@ -51,5 +51,6 @@
     "claude-opus-5-5": {
       "effortLevel": "high"
     }
-  }
+  },
+  "feedbackSurveyRate": 0
 }

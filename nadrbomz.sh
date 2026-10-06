@@ -27,16 +27,34 @@ ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-${OHMYZSH_DIR}/custom}"
 AUTOSUGGEST_DIR="${ZSH_CUSTOM_DIR}/plugins/zsh-autosuggestions"
 AUTOSUGGEST_REPO="https://github.com/zsh-users/zsh-autosuggestions.git"
 
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-dumb}" != "dumb" ]; then
+  ESC="$(printf '\033')"
+else
+  ESC=""
+fi
+
+sgr() {
+  if [ -n "${ESC}" ]; then
+    printf '%s[%sm' "${ESC}" "$1"
+  fi
+}
+
+pause() {
+  if [ -n "${ESC}" ]; then
+    sleep "$1" 2>/dev/null || true
+  fi
+}
+
 log() {
-  printf '%s\n' "$*"
+  printf '%s»%s %s\n' "$(sgr '1;38;5;45')" "$(sgr 0)" "$*"
 }
 
 warn() {
-  printf 'WARNING: %s\n' "$*" >&2
+  printf '%s[!] WARNING:%s %s\n' "$(sgr '1;38;5;214')" "$(sgr 0)" "$*" >&2
 }
 
 die() {
-  printf 'ERROR: %s\n' "$*" >&2
+  printf '%s[x] ERROR:%s %s\n' "$(sgr '1;38;5;196')" "$(sgr 0)" "$*" >&2
   exit 1
 }
 
@@ -217,21 +235,72 @@ fix_terminfo_setaf() {
   log "Installed corrected xterm-256color to ~/.terminfo"
 }
 
-print_post_install_hint() {
+print_rule() {
+  printf '  %s%s%s\n' "$(sgr "38;5;$1")" "$2" "$(sgr 0)"
+}
+
+print_logo() {
+  set -- 213 177 141 105 69 39
+  while IFS= read -r line; do
+    printf '  %s%s%s\n' "$(sgr "1;38;5;$1")" "${line}" "$(sgr 0)"
+    shift
+    pause 0.06
+  done <<'EOF'
+███╗   ██╗ █████╗ ██████╗ ██████╗ ██████╗  ██████╗ ███╗   ███╗███████╗
+████╗  ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔═══██╗████╗ ████║╚══███╔╝
+██╔██╗ ██║███████║██║  ██║██████╔╝██████╔╝██║   ██║██╔████╔██║  ███╔╝
+██║╚██╗██║██╔══██║██║  ██║██╔══██╗██╔══██╗██║   ██║██║╚██╔╝██║ ███╔╝
+██║ ╚████║██║  ██║██████╔╝██║  ██║██████╔╝╚██████╔╝██║ ╚═╝ ██║███████╗
+╚═╝  ╚═══╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝╚══════╝
+EOF
+}
+
+print_info_row() {
+  printf '     %s%s%s%s%s%s\n' "$(sgr '38;5;141')" "$1" "$(sgr 0)" "$(sgr '1;38;5;231')" "$2" "$(sgr 0)"
+}
+
+print_intro() {
+  printf '\n'
+  print_rule 57 '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄'
+  print_logo
+  print_rule 57 '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀'
+  printf '              %s-=[%s z e r o z n e t   p r e s e n t s %s]=-%s\n\n' \
+    "$(sgr '38;5;240')" "$(sgr '1;38;5;51')" "$(sgr '38;5;240')" "$(sgr 0)"
+  pause 0.2
+  printf '     %s░▒▓█ RELEASE INFO █▓▒░%s\n' "$(sgr '1;38;5;213')" "$(sgr 0)"
+  print_info_row 'RELEASE ....... ' 'nadrbomz shell + claude environment'
+  print_info_row 'TARGET ........ ' "$(detect_os) @ $(uname -n)"
+  print_info_row 'OPERATOR ...... ' "${USER:-$(id -un)}"
+  print_info_row 'RELEASE DATE .. ' "$(date +%Y-%m-%d)"
+  print_info_row 'SUPPLIED BY ... ' 'zeroznet'
+  print_info_row 'CRACKED BY .... ' 'Boba Bott'
+  print_info_row 'PROTECTION .... ' 'none, we checked'
+  printf '\n'
+  pause 0.3
+}
+
+print_outro() {
   os="$(detect_os)"
   zsh_path="$(command -v zsh)"
-
-  log "Done."
-  log ""
-  log "Start zsh now:           exec zsh"
   case "${os}" in
-    freebsd)
-      log "Set zsh as login shell:  sudo chsh -s ${zsh_path} ${USER:-\$USER}"
-      ;;
-    *)
-      log "Set zsh as login shell:  chsh -s ${zsh_path}"
-      ;;
+    freebsd) chsh_cmd="sudo chsh -s ${zsh_path} ${USER:-\$USER}" ;;
+    *)       chsh_cmd="chsh -s ${zsh_path}" ;;
   esac
+
+  printf '\n'
+  print_rule 57 '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄'
+  printf '           %s░▒▓█%s  I N S T A L L A T I O N   C O M P L E T E  %s█▓▒░%s\n' \
+    "$(sgr '38;5;213')" "$(sgr '1;38;5;231')" "$(sgr '38;5;39')" "$(sgr 0)"
+  print_rule 57 '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀'
+  printf '\n'
+  printf '     %sNEXT MOVES%s\n' "$(sgr '1;38;5;213')" "$(sgr 0)"
+  print_info_row 'START ZSH ..... ' 'exec zsh'
+  print_info_row 'LOGIN SHELL ... ' "${chsh_cmd}"
+  printf '\n'
+  printf '     %sgreetz fly out to%s ohmyzsh crew * zsh-users * tmux posse * razor 1911\n' \
+    "$(sgr '1;38;5;141')" "$(sgr 0)"
+  printf '     fairlight * future crew * anthropic * every sysop still running screen\n\n'
+  printf '     %szero fear. zero bloat. zeroznet.%s\n\n' "$(sgr '3;38;5;240')" "$(sgr 0)"
 }
 
 deploy_tree_from_clone() {
@@ -340,6 +409,7 @@ bootstrap_claude_plugins() {
 }
 
 main() {
+  print_intro
   check_prereqs
 
   install_ohmyzsh
@@ -355,7 +425,7 @@ main() {
 
   fix_terminfo_setaf
 
-  print_post_install_hint
+  print_outro
 }
 
 main "$@"

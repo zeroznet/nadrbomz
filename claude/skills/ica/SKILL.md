@@ -1,6 +1,7 @@
 ---
 name: ica
-description: Use when reviewing a repo for end-to-end architectural improvements. Covers depth, shallow modules, leaky boundaries, fragile seams, tangled data flow, inconsistent error handling, weak test surface, vocabulary drift, configuration sprawl, dormant code. Diagnosis only; produces a ranked candidate list, then drills into one at a time on user pick.
+description: Diagnoses architectural friction across a whole repo (shallow modules, leaky boundaries, fragile seams, tangled data flow, inconsistent error handling, weak test surface, vocabulary drift, config sprawl, dormant code) and presents a ranked top-5 list of refactor candidates with file paths, then drills into one at a time on user pick. Diagnosis only, no code edits. Use when the user says "/ica", "improve architecture", "find refactor opportunities", "look for bad seams", or "make this more testable", or when changes keep touching many files for one concept.
+argument-hint: "[lens,...]"
 ---
 
 # ica
@@ -11,19 +12,16 @@ Surface architectural friction across the whole repo and propose **deepening opp
 
 **Diagnosis skill, not a fix skill.** Output is a ranked list of candidates with concrete file paths. The user picks; nothing gets rewritten in step one.
 
-## When to use
-
-- Robert says `/ica`, "improve architecture", "find refactor opportunities", "look for bad seams", "make this more testable".
-- After a feature lands, before next sprint.
-- Onboarding a new collaborator (or a future Claude session) onto the codebase.
-- Changes keep touching N files for what feels like one concept.
-
 ## When NOT to use
 
 - Single-file refactor was requested explicitly. Just do it.
 - Bug hunt. Use `superpowers:systematic-debugging`.
 - Designing a new feature from scratch. Use `superpowers:brainstorming`.
 - Repo under ~500 LOC. Eyeball it.
+
+## Scope
+
+Arguments narrow the run to the named lenses, by the keyword in parentheses in step 2: `/ica boundaries`, `/ica coupling,errors`, `/ica depth seams`. No argument means all ten.
 
 ## Glossary (internal analysis vocabulary — use these words while thinking; they never appear in the output)
 
@@ -43,12 +41,12 @@ Surface architectural friction across the whole repo and propose **deepening opp
 
 ### 1. Orient (cheap, mandatory)
 
-Before exploring, read what already exists. Do not re-litigate decided things.
+Before exploring, read what already exists. Do not re-litigate decided things, and do not skip this because "I already know this codebase" — it may have changed.
 
 In parallel:
 - Read `CLAUDE.md` if present (project conventions and constraints).
 - Glob top-level docs: `README*`, `ARCHITECTURE*`. Read what comes back. Do not invent files that are not there.
-- `git log --since='3 months ago' --oneline | head -50`. Recently-changed paths flag hot spots.
+- `git log --since='3 months ago' --oneline | head -50`. Recently-changed paths flag hot spots. Stretch to 6 months on slow repos, 1 month on fast ones.
 - Tree top two levels: `find . -maxdepth 2 -type d -not -path '*/.*' -not -path '*/node_modules*'`.
 - Detect stack: `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, etc.
 
@@ -56,22 +54,22 @@ Output a one-paragraph **Orientation note** (max 6 lines): what this repo is, la
 
 ### 2. Explore
 
-For repos over ~5k LOC, dispatch the `Explore` subagent with the lenses below as the search prompt, explicitly requesting "very thorough" breadth so all ten lenses cover multiple locations and naming conventions. For smaller repos, walk it inline.
+For repos over ~5k LOC, dispatch the `Explore` subagent with the lenses in scope as the search prompt, explicitly requesting "very thorough" breadth so every lens covers multiple locations and naming conventions. For smaller repos, walk it inline.
 
-Apply **all ten lenses**, not just depth. For each hit, capture: file path, 1-line friction note, lens.
+Apply every lens in scope (all ten by default), not just depth. For each hit, capture: file path, 1-line friction note, lens.
 
-1. **Depth**: interface roughly equal to implementation? Pass-through wrappers? "Helper" modules called once?
-2. **Seams**: would adding a second adapter require gutting the first? Are seams faked (interface invented "for testability" but only one impl ever exists)?
-3. **Boundaries**: DB row types in HTTP handlers? Framework imports in pure domain? `req`/`res` reaching business logic? ORM models traveling outward unfiltered?
-4. **Data flow**: can you trace one request, job, or event end-to-end in 3 files or fewer? Where does state mutate? Where does it transform? Hidden global stores?
-5. **Error handling**: one error model, or every layer reinvents? Errors swallowed (`catch {}`)? Errors rewrapped without added context? Sentinel errors mixed with thrown exceptions?
-6. **Test surface**: pure functions extracted *only* for testability while the real bugs live in how they are called? Modules with no tests because their interface is too painful to set up?
-7. **Coupling and fan-out**: modules importing 20+ siblings? "God modules" everyone depends on? Cyclic imports?
-8. **Vocabulary drift**: same concept named three ways (`Order` / `Job` / `Task`)? Domain words that disagree with the README or `CLAUDE.md`? Acronyms only one person remembers?
-9. **Configuration sprawl**: config split across env vars, JSON, code constants, framework config, all reading from each other?
-10. **Dormant code**: unused exports, dead branches, feature flags whose other side is never taken, TODOs older than 6 months.
+1. **Depth** (`depth`): interface roughly equal to implementation? Pass-through wrappers? "Helper" modules called once?
+2. **Seams** (`seams`): would adding a second adapter require gutting the first? Are seams faked (interface invented "for testability" but only one impl ever exists)?
+3. **Boundaries** (`boundaries`): DB row types in HTTP handlers? Framework imports in pure domain? `req`/`res` reaching business logic? ORM models traveling outward unfiltered?
+4. **Data flow** (`data`): can you trace one request, job, or event end-to-end in 3 files or fewer? Where does state mutate? Where does it transform? Hidden global stores?
+5. **Error handling** (`errors`): one error model, or every layer reinvents? Errors swallowed (`catch {}`)? Errors rewrapped without added context? Sentinel errors mixed with thrown exceptions?
+6. **Test surface** (`tests`): pure functions extracted *only* for testability while the real bugs live in how they are called? Modules with no tests because their interface is too painful to set up?
+7. **Coupling and fan-out** (`coupling`): modules importing 20+ siblings? "God modules" everyone depends on? Cyclic imports?
+8. **Vocabulary drift** (`vocabulary`): same concept named three ways (`Order` / `Job` / `Task`)? Domain words that disagree with the README or `CLAUDE.md`? Acronyms only one person remembers?
+9. **Configuration sprawl** (`config`): config split across env vars, JSON, code constants, framework config, all reading from each other?
+10. **Dormant code** (`dormant`): unused exports, dead branches, feature flags whose other side is never taken, TODOs older than 6 months.
 
-Apply the **deletion test** to every depth and seam candidate. A "yes, deletion concentrates complexity" is the signal worth keeping.
+Apply the **deletion test** to every depth and seam candidate. A "yes, deletion concentrates complexity" is the signal worth keeping. "This module is bad" without it is vibes, not analysis.
 
 ### 3. Rank (internal — never shown)
 
@@ -104,9 +102,9 @@ Output exactly this structure (markdown). Numbered, scannable.
 Collect the pick via the AskUserQuestion tool (multiSelect): one option per candidate, label = number + short title, description = the one-line problem. Free-text "Other" covers "none, go deeper on X". The markdown block above still renders in full before the tool call — the widget replaces any trailing "pick" prompt.
 
 **Hard rules for step 4:**
-- Never propose interface signatures, method names, or code.
+- Never propose interface signatures, method names, or code. That is design-pass work.
 - Never list more than 5 candidates in the main block.
-- Every candidate must cite at least one concrete file path.
+- Every candidate must cite at least one concrete file path. "Consider SOLID" is not a candidate.
 - Found nothing meaningful? Say so in one line. Do not pad.
 
 ### 5. Design pass (no ad-hoc loop — invoke a skill)
@@ -120,7 +118,7 @@ Things that may happen during that pass:
 
 - **Want to explore alternative interfaces?** Sketch 2 to 3 in plain English, run the deletion test against each, only then write code.
 - **User rejects the candidate with a load-bearing reason?** Note the reason in your reply so the next ica run can avoid re-suggesting it. Do not write any persistence files unless the user asks.
-- **A naming or vocabulary decision lands?** Mention it in the reply. Do not silently edit project docs.
+- **A naming or vocabulary decision lands?** Mention it in the reply. Do not silently edit project docs — this skill is read-only unless the user explicitly asks.
 
 ### 6. Hand off (only when the user asks)
 
@@ -130,32 +128,3 @@ Once the design pass turns a candidate into a real plan, hand off:
 - A direct edit if it is a one-file extraction.
 
 Never silently start refactoring at the end of a design pass. Confirm with the user first.
-
-## Anti-patterns
-
-- **Dumping 30 candidates.** That is data, not analysis. Cap at 5.
-- **Jargon in the output.** Lens names, deletion-test verdicts, scoring shorthand ("Conf M", "Risk L") — analysis vocabulary stays in your head. The reader gets plain sentences.
-- **Generic advice.** "Consider SOLID" is not a candidate. A candidate has files, lines, and a deletion test.
-- **Inventing interfaces in step 4.** That is design-pass (`align`) work. Step 4 names problems.
-- **"This module is bad"** without the deletion test. Vibes, not analysis.
-- **Skipping orientation** because "I already know this codebase". Read what the repo actually has now, it may have changed.
-- **Writing or editing project docs unprompted.** This skill is read-only by default. Touch files only when the user explicitly asks during the design pass.
-- **Refactoring in step 4.** Diagnosis only. The user picks.
-
-## Quick reference
-
-| Step | Output | Time |
-|---|---|---|
-| 1. Orient | 1 paragraph | 1 to 3 min |
-| 2. Explore | raw notes per lens | 5 to 20 min (subagent for big repos) |
-| 3. Score | ranking table | 1 to 2 min |
-| 4. Present | top-5 plain-language block | 1 min |
-| 5. Design pass | hand off to `align` deep / `superpowers:brainstorming` | as long as it takes |
-| 6. Hand off | plan or edits | follow-on skill |
-
-## Tuning
-
-- **Subagent threshold:** ~5k LOC. Below it, walk the repo inline.
-- **Lens budget:** all 10 by default. User can scope: `/ica boundaries`, `/ica deps,errors`, `/ica depth seams`.
-- **Top-N:** 5 by default. User can ask for more, fewer, or focus on one area.
-- **History window:** `git log --since='3 months ago'` for hot-spot signal. Stretch to 6 months on slower repos, 1 month on fast ones.

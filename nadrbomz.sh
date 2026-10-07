@@ -303,44 +303,337 @@ print_rule() {
   printf '  %s%s%s\n' "$(sgr "38;5;$1")" "$2" "$(sgr 0)"
 }
 
-print_logo() {
-  set -- 213 177 141 105 69 39
-  while IFS= read -r line; do
-    printf '  %s%s%s\n' "$(sgr "1;38;5;$1")" "${line}" "$(sgr 0)"
-    shift
-    pause 0.06
-  done <<'EOF'
-███╗   ██╗ █████╗ ██████╗ ██████╗ ██████╗  ██████╗ ███╗   ███╗███████╗
-████╗  ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔═══██╗████╗ ████║╚══███╔╝
-██╔██╗ ██║███████║██║  ██║██████╔╝██████╔╝██║   ██║██╔████╔██║  ███╔╝
-██║╚██╗██║██╔══██║██║  ██║██╔══██╗██╔══██╗██║   ██║██║╚██╔╝██║ ███╔╝
-██║ ╚████║██║  ██║██████╔╝██║  ██║██████╔╝╚██████╔╝██║ ╚═╝ ██║███████╗
-╚═╝  ╚═══╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝╚══════╝
-EOF
-}
-
 print_info_row() {
   printf '     %s%s%s%s%s%s\n' "$(sgr '38;5;141')" "$1" "$(sgr 0)" "$(sgr '1;38;5;231')" "$2" "$(sgr 0)"
 }
 
+# The cracktro is a 74x24 cell canvas rendered by awk, the one scripting tool
+# every base system ships (mawk and busybox included). Rows 0-17 hold the
+# copper bars, logo, credits and release info; rows 18-23 are the scroller
+# band, which only exists while animating. The final frame is the same in
+# every mode.
+INTRO_WIDTH=74
+INTRO_HEIGHT=24
+
+intro_awk_program() {
+  cat <<'AWK'
+function code(p) {
+  if (esc == "") return ""
+  return (p == "") ? esc "[0m" : esc "[0;" p "m"
+}
+
+function wrap(i, n) {
+  i = int(i) % n
+  return (i < 0) ? i + n : i
+}
+
+function wipe(   y, x) {
+  for (y = 0; y < H; y++)
+    for (x = 0; x < W; x++) {
+      C[y, x] = " "
+      S[y, x] = ""
+    }
+}
+
+function cell(y, x, g, p) {
+  if (x < 0 || x >= W) return
+  C[y, x] = g
+  S[y, x] = p
+}
+
+function text(y, x, s, p,   i) {
+  for (i = 1; i <= length(s); i++) cell(y, x + i - 1, substr(s, i, 1), p)
+}
+
+function row(y,   x, out, cur) {
+  out = ""
+  cur = ""
+  for (x = 0; x < W; x++) {
+    if (S[y, x] != cur) {
+      cur = S[y, x]
+      out = out code(cur)
+    }
+    out = out C[y, x]
+  }
+  if (cur != "") out = out code("")
+  if (esc == "") sub(/ +$/, "", out)
+  return out
+}
+
+function stars_init(   i) {
+  for (i = 1; i <= NSTARS; i++) {
+    SX[i] = rand() * W
+    SY[i] = 8 + int(rand() * (H - 8))
+    SL[i] = 1 + int(rand() * 3)
+  }
+}
+
+function stars_move(   i) {
+  for (i = 1; i <= NSTARS; i++) {
+    SX[i] -= SPEED[SL[i]]
+    if (SX[i] < 0) {
+      SX[i] += W
+      SY[i] = 8 + int(rand() * (H - 8))
+    }
+  }
+}
+
+function stars_draw(   i) {
+  for (i = 1; i <= NSTARS; i++) cell(SY[i], int(SX[i]), STAR[SL[i]], STARC[SL[i]])
+}
+
+function bars_draw(t, done,   half, mid, x) {
+  half = done ? 35 : t * 2.5
+  mid = LX + 35
+  for (x = LX; x < LX + 70; x++) {
+    if (x < mid - half || x >= mid + half) continue
+    cell(0, x, "▄", "38;5;" COPPER[wrap(x - t, NCOPPER) + 1])
+    cell(7, x, "▀", "38;5;" COPPER[wrap(x + t, NCOPPER) + 1])
+  }
+}
+
+# Each logo cell hides until its reveal frame, flickers as noise for the ten
+# frames before it, flashes white for two, then joins the chrome gradient.
+function logo_draw(t, done,   y, x, ch, r, p, d, shine) {
+  shine = wrap(t * 3, 240) - 40
+  for (y = 0; y < 6; y++)
+    for (x = 0; x < 70; x++) {
+      ch = substr(LOGO[y], x + 1, 1)
+      if (ch == " ") continue
+      if (!done) {
+        r = REVEAL[y, x]
+        if (t < r - 10) continue
+        if (t < r) {
+          cell(1 + y, LX + x, NOISE[1 + int(rand() * 3)], "38;5;" (236 + int(rand() * 8)))
+          continue
+        }
+        if (t < r + 2) {
+          cell(1 + y, LX + x, GLYPH[ch], "1;38;5;231")
+          continue
+        }
+      }
+      if (ch == "#") {
+        p = "1;38;5;" CHROME[wrap(x * 0.5 + y - t * 0.6, NCHROME) + 1]
+        d = x + 2 * y - shine
+        if (!done && d >= 0 && d < 3) p = "1;38;5;231"
+      } else {
+        p = "38;5;60"
+      }
+      cell(1 + y, LX + x, GLYPH[ch], p)
+    }
+}
+
+function credits_draw(t, done,   s, n, i, c, p, x0) {
+  s = "-=[ z e r o z n e t   p r e s e n t s ]=-"
+  x0 = LX + int((70 - length(s)) / 2)
+  n = done ? length(s) : int((t - 40) * 2)
+  if (n > length(s)) n = length(s)
+  for (i = 1; i <= n; i++) {
+    c = substr(s, i, 1)
+    if (i == n && n < length(s)) p = "1;38;5;231"
+    else if (c ~ /[a-z]/) p = "1;38;5;51"
+    else p = "38;5;240"
+    cell(8, x0 + i - 1, c, p)
+  }
+}
+
+function info_draw(t, done,   i, start, n, v, p) {
+  if (!done && t < 55) return
+  p = (!done && t < 59) ? "1;38;5;231" : "1;38;5;213"
+  cell(10, 5, "░", p); cell(10, 6, "▒", p); cell(10, 7, "▓", p); cell(10, 8, "█", p)
+  text(10, 9, " RELEASE INFO ", p)
+  cell(10, 23, "█", p); cell(10, 24, "▓", p); cell(10, 25, "▒", p); cell(10, 26, "░", p)
+  for (i = 0; i < NINFO; i++) {
+    start = 62 + i * 5
+    if (!done && t < start) continue
+    text(11 + i, 5, LABEL[i], "38;5;141")
+    v = VALUE[i]
+    n = done ? length(v) : int((t - start) * 3)
+    if (n > length(v)) n = length(v)
+    text(11 + i, 21, substr(v, 1, n), "1;38;5;231")
+    if (n < length(v)) cell(11 + i, 21 + n, "█", "38;5;51")
+  }
+}
+
+function scroller_draw(t,   s, x, i, c, y, p) {
+  s = t - 30
+  for (x = 0; x < W; x++) {
+    i = x + s - W
+    if (i < 0 || i >= length(SCROLL)) continue
+    c = substr(SCROLL, i + 1, 1)
+    if (c == " ") continue
+    y = H - 5 + WAVE[wrap(x + t * 4 / 3, NWAVE) + 1]
+    p = (x < 3 || x >= W - 3) ? "38;5;240" : "1;38;5;" RAINBOW[wrap(x + t * 1.5, NRAINBOW) + 1]
+    cell(y, x, c, p)
+  }
+}
+
+function compose(t, done) {
+  wipe()
+  if (!done) stars_draw()
+  bars_draw(t, done)
+  logo_draw(t, done)
+  credits_draw(t, done)
+  info_draw(t, done)
+  if (!done) {
+    scroller_draw(t)
+    if (skippable) text(18, W - 17, "any key = skip", "38;5;238")
+  }
+}
+
+# Synchronized output (DEC 2026) makes supporting terminals swap whole frames;
+# the rest ignore the unknown mode. Every frame ends on the canvas bottom row,
+# so the next one climbs back to the origin relative to it.
+function show(rows, tail,   y, out) {
+  out = esc "[?2026h" (drawn ? "\r" esc "[" (H - 1) "A" : "")
+  drawn = 1
+  for (y = 0; y < rows; y++) out = out row(y) esc "[K" ((y < rows - 1) ? "\n" : "")
+  printf "%s%s%s", out, tail, esc "[?2026l"
+  fflush()
+}
+
+BEGIN {
+  LX = 2
+  LOGO[0] = "###7   ##7 #####7 ######7 ######7 ######7  ######7 ###7   ###7#######7"
+  LOGO[1] = "####7  ##I##F==##7##F==##7##F==##7##F==##7##F===##7####7 ####IL==###FJ"
+  LOGO[2] = "##F##7 ##I#######I##I  ##I######FJ######FJ##I   ##I##F####F##I  ###FJ "
+  LOGO[3] = "##IL##7##I##F==##I##I  ##I##F==##7##F==##7##I   ##I##IL##FJ##I ###FJ  "
+  LOGO[4] = "##I L####I##I  ##I######FJ##I  ##I######FJL######FJ##I L=J ##I#######7"
+  LOGO[5] = "L=J  L===JL=J  L=JL=====J L=J  L=JL=====J  L=====J L=J     L=JL======J"
+  GLYPH["#"] = "█"; GLYPH["7"] = "╗"; GLYPH["F"] = "╔"; GLYPH["J"] = "╝"
+  GLYPH["L"] = "╚"; GLYPH["="] = "═"; GLYPH["I"] = "║"
+  NOISE[1] = "░"; NOISE[2] = "▒"; NOISE[3] = "▓"
+  NCHROME = split("93 129 165 201 207 213 219 225 231 195 159 123 87 51 45 39 33 27 57", CHROME, " ")
+  NCOPPER = split("53 54 55 56 57 93 129 165 201 165 129 93 57 56 55 54", COPPER, " ")
+  NRAINBOW = split("196 202 208 214 220 226 190 154 118 82 46 47 48 49 50 51 45 39 33 27 21 57 93 129 165 201 200 199 198 197", RAINBOW, " ")
+  # One period of int(2.5 + 2 * sin) in 42 steps; busybox awk is often built
+  # without math support, so the scroller wave comes from a table.
+  NWAVE = split("2 2 3 3 3 3 4 4 4 4 4 4 4 4 4 4 3 3 3 3 2 2 2 1 1 1 1 0 0 0 0 0 0 0 0 0 0 1 1 1 1 2", WAVE, " ")
+  NSTARS = 46
+  STAR[1] = "."; STAR[2] = "·"; STAR[3] = "*"
+  STARC[1] = "38;5;237"; STARC[2] = "38;5;244"; STARC[3] = "38;5;252"
+  SPEED[1] = 0.25; SPEED[2] = 0.5; SPEED[3] = 1
+  NINFO = 7
+  LABEL[0] = "RELEASE ....... "; VALUE[0] = "nadrbomz shell + claude environment"
+  LABEL[1] = "TARGET ........ "; VALUE[1] = target
+  LABEL[2] = "OPERATOR ...... "; VALUE[2] = operator
+  LABEL[3] = "RELEASE DATE .. "; VALUE[3] = rdate
+  LABEL[4] = "SUPPLIED BY ... "; VALUE[4] = "zeroznet"
+  LABEL[5] = "CRACKED BY .... "; VALUE[5] = "Boba Bott"
+  LABEL[6] = "PROTECTION .... "; VALUE[6] = "none, we checked"
+  for (i = 0; i < NINFO; i++) VALUE[i] = substr(VALUE[i], 1, W - 21)
+  SCROLL = "*** NADRBOMZ ***     ZEROZNET PRESENTS ANOTHER FLAWLESS DOTFILES RELEASE ...     ZSH, TMUX, NEOVIM, SSH AND CLAUDE CONFIG IN ONE CURL ...     CRACKED, TRAINED AND PACKED BY BOBA BOTT ...     NO .BASHRC WAS HARMED (OK, ONE. IT HAS A .BAK) ...     GREETZ TO OHMYZSH CREW * ZSH-USERS * TMUX POSSE * NEOVIM MAFIA * RAZOR 1911 * FAIRLIGHT * FUTURE CREW * THE BLACK LOTUS ...     ZEROZNET SIGNING OFF ...     "
+
+  srand(seed)
+  for (y = 0; y < 6; y++)
+    for (x = 0; x < 70; x++) REVEAL[y, x] = 6 + int(x * 0.45) + int(rand() * 14)
+
+  if (mode == "static") {
+    compose(0, 1)
+    for (y = 0; y < 18; y++) print row(y)
+    exit
+  }
+  for (y = 1; y < H; y++) printf "\n"
+  printf "%s[%dA", esc, H - 1
+  stars_init()
+  last = 30 + length(SCROLL) + W
+  for (t = 0; t < last; t++) {
+    if (skipfile != "") {
+      skip = (getline flag < skipfile)
+      close(skipfile)
+      if (skip > 0) break
+    }
+    stars_move()
+    compose(t, 0)
+    show(H, "")
+    system("sleep " delay)
+  }
+  compose(t, 1)
+  show(18, "\n" esc "[J")
+}
+AWK
+}
+
+intro_terminal_fits() {
+  size="$(stty size </dev/tty 2>/dev/null)" || return 1
+  rows="${size% *}"
+  cols="${size#* }"
+  case "${rows}${cols}" in
+    ''|*[!0-9]*) return 1 ;;
+  esac
+  [ "${rows}" -gt "${INTRO_HEIGHT}" ] && [ "${cols}" -gt "${INTRO_WIDTH}" ]
+}
+
+restore_intro_terminal() {
+  if [ -n "${INTRO_SKIP_FILE}" ]; then
+    rm -f "${INTRO_SKIP_FILE}"
+  fi
+  if [ -n "${INTRO_TTY_STATE}" ]; then
+    stty "${INTRO_TTY_STATE}" </dev/tty 2>/dev/null || true
+  fi
+  printf '%s[?2026l%s[0m%s[?25h' "${ESC}" "${ESC}" "${ESC}"
+}
+
+abort_intro() {
+  if [ -n "${INTRO_PID}" ]; then
+    kill "${INTRO_PID}" 2>/dev/null || true
+  fi
+  restore_intro_terminal
+  printf '\n'
+  exit 130
+}
+
+# The renderer runs in the background while the tty sits in non-canonical mode
+# with a 0.1s read timeout, so polling it for a skip key never blocks for long.
+# A key press writes the skip file, which awk checks between frames, so the
+# intro always ends on a whole final frame. Background jobs of a
+# non-interactive shell ignore SIGINT, hence the trap that takes awk down on
+# Ctrl-C.
+play_intro_demo() {
+  INTRO_PID=""
+  INTRO_SKIP_FILE=""
+  INTRO_TTY_STATE="$(stty -g </dev/tty 2>/dev/null)" || INTRO_TTY_STATE=""
+  if [ -n "${INTRO_TTY_STATE}" ] && ! stty -icanon -echo min 0 time 1 </dev/tty 2>/dev/null; then
+    INTRO_TTY_STATE=""
+  fi
+  trap restore_intro_terminal EXIT
+  trap abort_intro INT TERM HUP
+  printf '%s[?25l' "${ESC}"
+
+  if [ -n "${INTRO_TTY_STATE}" ]; then
+    INTRO_SKIP_FILE="$(mktemp "${TMPDIR:-/tmp}/nadrbomz-skip.XXXXXX")"
+    awk "$@" -v skippable=1 -v skipfile="${INTRO_SKIP_FILE}" "${INTRO_PROGRAM}" </dev/null &
+    INTRO_PID=$!
+    while kill -0 "${INTRO_PID}" 2>/dev/null; do
+      key_bytes="$(dd bs=1 count=1 </dev/tty 2>/dev/null | wc -c | tr -d ' ')" || key_bytes=0
+      if [ "${key_bytes:-0}" -gt 0 ]; then
+        printf 'skip\n' >"${INTRO_SKIP_FILE}"
+      fi
+    done
+    wait "${INTRO_PID}" 2>/dev/null || true
+  else
+    awk "$@" -v skippable=0 -v skipfile="" "${INTRO_PROGRAM}" </dev/null
+  fi
+
+  INTRO_PID=""
+  trap - EXIT INT TERM HUP
+  restore_intro_terminal
+}
+
 print_intro() {
   printf '\n'
-  print_rule 57 '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄'
-  print_logo
-  print_rule 57 '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀'
-  printf '              %s-=[%s z e r o z n e t   p r e s e n t s %s]=-%s\n\n' \
-    "$(sgr '38;5;240')" "$(sgr '1;38;5;51')" "$(sgr '38;5;240')" "$(sgr 0)"
-  pause 0.2
-  printf '     %s░▒▓█ RELEASE INFO █▓▒░%s\n' "$(sgr '1;38;5;213')" "$(sgr 0)"
-  print_info_row 'RELEASE ....... ' 'nadrbomz shell + claude environment'
-  print_info_row 'TARGET ........ ' "$(detect_os) @ $(uname -n)"
-  print_info_row 'OPERATOR ...... ' "${USER:-$(id -un)}"
-  print_info_row 'RELEASE DATE .. ' "$(date +%Y-%m-%d)"
-  print_info_row 'SUPPLIED BY ... ' 'zeroznet'
-  print_info_row 'CRACKED BY .... ' 'Boba Bott'
-  print_info_row 'PROTECTION .... ' 'none, we checked'
-  printf '\n'
-  pause 3
+  if ! has_cmd awk; then
+    return 0
+  fi
+  INTRO_PROGRAM="$(intro_awk_program)"
+  set -- -v esc="${ESC}" -v W="${INTRO_WIDTH}" -v H="${INTRO_HEIGHT}" -v delay=0.02 -v seed="$$" \
+    -v target="$(detect_os) @ $(uname -n)" -v operator="${USER:-$(id -un)}" -v rdate="$(date +%Y-%m-%d)"
+  if [ -n "${ESC}" ] && intro_terminal_fits; then
+    play_intro_demo "$@"
+  else
+    awk "$@" -v mode=static "${INTRO_PROGRAM}" </dev/null
+    pause 3
+  fi
 }
 
 print_outro() {
@@ -369,7 +662,7 @@ print_outro() {
   printf '\n'
   printf '     %sgreetz fly out to%s ohmyzsh crew * zsh-users * tmux posse * razor 1911\n' \
     "$(sgr '1;38;5;141')" "$(sgr 0)"
-  printf '     fairlight * future crew * anthropic * every sysop still running screen\n\n'
+  printf '     fairlight * future crew * tbl * every sysop still running screen\n\n'
   printf '     %szero fear. zero bloat. zeroznet.%s\n\n' "$(sgr '3;38;5;240')" "$(sgr 0)"
 }
 

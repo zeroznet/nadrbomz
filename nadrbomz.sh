@@ -4,20 +4,6 @@
 set -eu
 set -o pipefail
 
-BASE_URL="https://raw.githubusercontent.com/zeroznet/nadrbomz/main"
-
-ZSHRC_URL="${BASE_URL}/zshrc_zero"
-BASHRC_URL="${BASE_URL}/bashrc_zero"
-SHELL_ALIASES_URL="${BASE_URL}/shell_aliases_zero"
-SCREENRC_URL="${BASE_URL}/screenrc_zero"
-TMUXRC_URL="${BASE_URL}/tmuxrc_zero"
-NVIM_INIT_URL="${BASE_URL}/init.vim_zero"
-FASTFETCH_CONFIG_URL="${BASE_URL}/fastfetch_zero"
-SSH_CONFIG_URL="${BASE_URL}/ssh_config_zero"
-ZSHENV_URL="${BASE_URL}/zshenv_zero"
-SSH_KEY_ENSURE_URL="${BASE_URL}/ssh-key-ensure_zero"
-WT_CONNECT_URL="${BASE_URL}/wt-connect_zero"
-
 NADRBOMZ_CLONE_URL="${NADRBOMZ_CLONE_URL:-https://github.com/zeroznet/nadrbomz.git}"
 CLAUDE_DIR="${HOME}/.claude"
 DEV_DIR="${HOME}/dev"
@@ -130,9 +116,10 @@ detect_os() {
 
 check_prereqs() {
   missing=""
-  for tool in git zsh curl; do
+  for tool in git zsh; do
     has_cmd "${tool}" || missing="${missing} ${tool}"
   done
+  has_cmd curl || has_cmd fetch || missing="${missing} curl"
 
   [ -z "${missing}" ] && return 0
 
@@ -165,10 +152,12 @@ check_prereqs() {
   exit 1
 }
 
-download_file() {
-  url="$1"
-  out="$2"
-  curl -fsSL "$url" -o "$out"
+fetch_url() {
+  if has_cmd curl; then
+    curl -fsSL "$1"
+  else
+    fetch -q -o - "$1"
+  fi
 }
 
 install_ohmyzsh() {
@@ -182,7 +171,7 @@ install_ohmyzsh() {
   step_begin "oh-my-zsh"
   # The installer reports its own failures on stdout, so keep its output and
   # replay it only when it fails.
-  if ! omz_output="$(CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL "${install_url}")" "" --unattended 2>&1)"; then
+  if ! omz_output="$(CHSH=no RUNZSH=no KEEP_ZSHRC=yes sh -c "$(fetch_url "${install_url}")" "" --unattended 2>&1)"; then
     clear_line
     printf '%s\n' "${omz_output}" >&2
     die "Oh My Zsh install failed"
@@ -212,19 +201,46 @@ sync_git_repo() {
   fi
 }
 
-deploy_file() {
-  url="$1"
+clone_nadrbomz() {
+  CLONE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/nadrbomz-clone.XXXXXX")"
+  trap 'rm -rf "${CLONE_DIR}"' EXIT HUP INT TERM
+
+  step_begin "nadrbomz repo"
+  # umask 077 keeps the checkout private, so targets that do not exist yet land
+  # as 0600 (0700 for executables) instead of world-readable.
+  (umask 077 && git clone -q --depth 1 "${NADRBOMZ_CLONE_URL}" "${CLONE_DIR}")
+  report_ok "nadrbomz repo" "cloned @ $(git -C "${CLONE_DIR}" rev-parse --short HEAD)"
+}
+
+remove_clone() {
+  rm -rf "${CLONE_DIR}"
+  trap - EXIT HUP INT TERM
+}
+
+deploy_tree() {
+  src="$1"
   target="$2"
   label="$3"
 
-  tmp_file="$(mktemp "${TMPDIR:-/tmp}/dotfile.XXXXXX")"
-  trap 'rm -f "${tmp_file}"' EXIT HUP INT TERM
+  backup_note=""
+  if [ -d "${target}" ]; then
+    backup="${target}.bak"
+    rm -rf "${backup}"
+    cp -rp "${target}" "${backup}"
+    backup_note=" +bak"
+  fi
 
-  step_begin "${label}"
-  download_file "${url}" "${tmp_file}"
+  mkdir -p "${target}"
+  cp -r "${src}/." "${target}/"
+  report_ok "${label}" "$(tilde "${target}")/${backup_note}"
+}
 
-  target_dir="$(dirname "${target}")"
-  mkdir -p "${target_dir}"
+deploy_file() {
+  src="$1"
+  target="$2"
+  label="$3"
+
+  mkdir -p "$(dirname "${target}")"
 
   backup_note=""
   if [ -f "${target}" ] || [ -L "${target}" ]; then
@@ -233,22 +249,20 @@ deploy_file() {
     backup_note=" +bak"
   fi
 
-  mv "${tmp_file}" "${target}"
-  trap - EXIT HUP INT TERM
-
+  cp "${src}" "${target}"
   report_ok "${label}" "$(tilde "${target}")${backup_note}"
 }
 
 deploy_dotfiles() {
-  deploy_file "${SHELL_ALIASES_URL}" "${HOME}/.shell_aliases" ".shell_aliases"
-  deploy_file "${ZSHRC_URL}" "${HOME}/.zshrc" ".zshrc"
-  deploy_file "${ZSHENV_URL}" "${HOME}/.zshenv" ".zshenv"
-  deploy_file "${BASHRC_URL}" "${HOME}/.bashrc" ".bashrc"
-  deploy_file "${SCREENRC_URL}" "${HOME}/.screenrc" ".screenrc"
-  deploy_file "${TMUXRC_URL}" "${HOME}/.tmux.conf" ".tmux.conf"
-  deploy_file "${NVIM_INIT_URL}" "${HOME}/.config/nvim/init.vim" "init.vim"
-  deploy_file "${FASTFETCH_CONFIG_URL}" "${HOME}/.config/fastfetch/config.jsonc" "fastfetch config"
-  deploy_file "${SSH_CONFIG_URL}" "${HOME}/.ssh/config" "ssh config"
+  deploy_file "${CLONE_DIR}/shell_aliases_zero" "${HOME}/.shell_aliases" ".shell_aliases"
+  deploy_file "${CLONE_DIR}/zshrc_zero" "${HOME}/.zshrc" ".zshrc"
+  deploy_file "${CLONE_DIR}/zshenv_zero" "${HOME}/.zshenv" ".zshenv"
+  deploy_file "${CLONE_DIR}/bashrc_zero" "${HOME}/.bashrc" ".bashrc"
+  deploy_file "${CLONE_DIR}/screenrc_zero" "${HOME}/.screenrc" ".screenrc"
+  deploy_file "${CLONE_DIR}/tmuxrc_zero" "${HOME}/.tmux.conf" ".tmux.conf"
+  deploy_file "${CLONE_DIR}/init.vim_zero" "${HOME}/.config/nvim/init.vim" "init.vim"
+  deploy_file "${CLONE_DIR}/fastfetch_zero" "${HOME}/.config/fastfetch/config.jsonc" "fastfetch config"
+  deploy_file "${CLONE_DIR}/ssh_config_zero" "${HOME}/.ssh/config" "ssh config"
 }
 
 is_wsl() {
@@ -264,8 +278,8 @@ deploy_wsl_scripts() {
     return 0
   fi
 
-  deploy_file "${SSH_KEY_ENSURE_URL}" "${HOME}/.local/bin/ssh-key-ensure" "ssh-key-ensure"
-  deploy_file "${WT_CONNECT_URL}" "${HOME}/.local/bin/wt-connect" "wt-connect"
+  deploy_file "${CLONE_DIR}/ssh-key-ensure_zero" "${HOME}/.local/bin/ssh-key-ensure" "ssh-key-ensure"
+  deploy_file "${CLONE_DIR}/wt-connect_zero" "${HOME}/.local/bin/wt-connect" "wt-connect"
   chmod +x "${HOME}/.local/bin/ssh-key-ensure" "${HOME}/.local/bin/wt-connect"
 }
 
@@ -666,63 +680,17 @@ print_outro() {
   printf '     %szero fear. zero bloat. zeroznet.%s\n\n' "$(sgr '3;38;5;240')" "$(sgr 0)"
 }
 
-deploy_tree_from_clone() {
-  src="$1"
-  target="$2"
-  label="$3"
-
-  backup_note=""
-  if [ -d "${target}" ]; then
-    backup="${target}.bak"
-    rm -rf "${backup}"
-    cp -rp "${target}" "${backup}"
-    backup_note=" +bak"
-  fi
-
-  mkdir -p "${target}"
-  cp -r "${src}/." "${target}/"
-  report_ok "${label}" "$(tilde "${target}")/${backup_note}"
-}
-
-deploy_file_from_clone() {
-  src="$1"
-  target="$2"
-  label="$3"
-
-  mkdir -p "$(dirname "${target}")"
-
-  backup_note=""
-  if [ -f "${target}" ] || [ -L "${target}" ]; then
-    backup="${target}.bak"
-    cp -p "${target}" "${backup}"
-    backup_note=" +bak"
-  fi
-
-  cp "${src}" "${target}"
-  report_ok "${label}" "$(tilde "${target}")${backup_note}"
-}
-
 deploy_claude_config() {
-  clone_dir="$(mktemp -d "${TMPDIR:-/tmp}/nadrbomz-clone.XXXXXX")"
-  trap 'rm -rf "${clone_dir}"' EXIT HUP INT TERM
+  deploy_tree "${CLONE_DIR}/claude/skills"   "${CLAUDE_DIR}/skills"   "skills"
+  deploy_tree "${CLONE_DIR}/claude/commands" "${CLAUDE_DIR}/commands" "commands"
+  deploy_tree "${CLONE_DIR}/claude/scripts"  "${CLAUDE_DIR}/scripts"  "scripts"
+  deploy_file "${CLONE_DIR}/claude/statusline-command.sh" "${CLAUDE_DIR}/statusline-command.sh" "statusline"
+  deploy_file "${CLONE_DIR}/claude/settings.json" "${CLAUDE_DIR}/settings.json" "settings.json"
 
-  step_begin "nadrbomz repo"
-  git clone -q --depth 1 "${NADRBOMZ_CLONE_URL}" "${clone_dir}"
-  report_ok "nadrbomz repo" "cloned @ $(git -C "${clone_dir}" rev-parse --short HEAD)"
-
-  deploy_tree_from_clone "${clone_dir}/claude/skills"   "${CLAUDE_DIR}/skills"   "skills"
-  deploy_tree_from_clone "${clone_dir}/claude/commands" "${CLAUDE_DIR}/commands" "commands"
-  deploy_tree_from_clone "${clone_dir}/claude/scripts"  "${CLAUDE_DIR}/scripts"  "scripts"
-  deploy_file_from_clone "${clone_dir}/claude/statusline-command.sh" "${CLAUDE_DIR}/statusline-command.sh" "statusline"
-  deploy_file_from_clone "${clone_dir}/claude/settings.json" "${CLAUDE_DIR}/settings.json" "settings.json"
-
-  deploy_file_from_clone "${clone_dir}/dev/CLAUDE.md" "${DEV_DIR}/CLAUDE.md" "workspace CLAUDE.md"
-  deploy_file_from_clone "${clone_dir}/dev/HOWTO.md"  "${DEV_DIR}/HOWTO.md"  "workspace HOWTO.md"
+  deploy_file "${CLONE_DIR}/dev/CLAUDE.md" "${DEV_DIR}/CLAUDE.md" "workspace CLAUDE.md"
+  deploy_file "${CLONE_DIR}/dev/HOWTO.md"  "${DEV_DIR}/HOWTO.md"  "workspace HOWTO.md"
 
   chmod +x "${CLAUDE_DIR}/scripts/prune.sh" "${CLAUDE_DIR}/statusline-command.sh" 2>/dev/null || true
-
-  rm -rf "${clone_dir}"
-  trap - EXIT HUP INT TERM
 }
 
 bootstrap_claude_plugins() {
@@ -813,6 +781,7 @@ main() {
   sync_git_repo "${AUTOSUGGEST_REPO}" "${AUTOSUGGEST_DIR}" "zsh-autosuggestions"
 
   print_section "DOTFILES"
+  clone_nadrbomz
   deploy_dotfiles
 
   print_section "WSL TOOLS"
@@ -820,6 +789,7 @@ main() {
 
   print_section "CLAUDE CONFIG"
   deploy_claude_config
+  remove_clone
 
   print_section "CLAUDE PLUGINS"
   bootstrap_claude_plugins

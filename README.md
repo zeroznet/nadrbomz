@@ -6,7 +6,7 @@ Personal shell and environment bootstrap.
 
 - installs Oh-My-Zsh if missing
 - installs or updates `zsh-autosuggestions`
-- downloads all config files from GitHub and deploys them:
+- shallow-clones this repo once and deploys every file from that one snapshot (falls back to `fetch` where `curl` is missing, e.g. FreeBSD base):
   - `zshrc_zero` -> `~/.zshrc`
   - `zshenv_zero` -> `~/.zshenv`
   - `bashrc_zero` -> `~/.bashrc`

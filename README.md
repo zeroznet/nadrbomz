@@ -34,7 +34,7 @@ FreeBSD base has no `curl`, so use `fetch`; the script falls back to it on its o
 fetch -q -o - https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.sh | sh
 ```
 
-To run only what you have reviewed, deploy from a local clone instead of GitHub:
+To deploy files you have reviewed, run from a local clone instead of GitHub. Oh My Zsh, `zsh-autosuggestions` and the Claude plugins still come from their upstreams:
 
 ```sh
 git clone https://github.com/zeroznet/nadrbomz.git && cd nadrbomz

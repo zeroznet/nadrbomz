@@ -110,7 +110,7 @@ clean_tmp_preserving_active() {
 # Size of a tmp tree minus the active session subtree (for dry-run reporting).
 tmp_size_excluding_active() {
   tmp="$1"; active="$2"
-  if [ -n "$active" ] && [ "${active#$tmp/}" != "$active" ]; then
+  if [ -n "$active" ] && [ "${active#"$tmp"/}" != "$active" ]; then
     find "$tmp" -mindepth 1 \
       ! -path "$active" ! -path "$active/*" \
       -print0 2>/dev/null \
@@ -123,7 +123,7 @@ tmp_size_excluding_active() {
 # Same, in KB (for the apply-mode cleared total).
 tmp_kb_excluding_active() {
   tmp="$1"; active="$2"
-  if [ -n "$active" ] && [ "${active#$tmp/}" != "$active" ]; then
+  if [ -n "$active" ] && [ "${active#"$tmp"/}" != "$active" ]; then
     k=$(find "$tmp" -mindepth 1 \
       ! -path "$active" ! -path "$active/*" \
       -print0 2>/dev/null \
@@ -163,7 +163,7 @@ if [ "$apply" -eq 0 ]; then
   for glob in "/tmp/claude-"* "$HOME/tmp/claude-"*; do
     [ -e "$glob" ] || continue
     sz=$(tmp_size_excluding_active "$glob" "$active_session")
-    if [ -n "$active_session" ] && [ "${active_session#$glob/}" != "$active_session" ]; then
+    if [ -n "$active_session" ] && [ "${active_session#"$glob"/}" != "$active_session" ]; then
       printf '  %-8s  %s (active session preserved)\n' "${sz:-0}" "$glob"
     else
       printf '  %-8s  %s\n' "${sz:-0}" "$glob"
@@ -212,7 +212,7 @@ done
 
 for glob in "/tmp/claude-"* "$HOME/tmp/claude-"*; do
   [ -e "$glob" ] || continue
-  if [ -n "$active_session" ] && [ "${active_session#$glob/}" != "$active_session" ]; then
+  if [ -n "$active_session" ] && [ "${active_session#"$glob"/}" != "$active_session" ]; then
     total_kb=$((total_kb + $(tmp_kb_excluding_active "$glob" "$active_session")))
     clean_tmp_preserving_active "$glob" "$active_session"
   else

@@ -2,6 +2,13 @@
   <img src="assets/cracktro.svg" width="100%" alt="nadrbomz cracktro: a chrome NADRBOMZ logo decrypts between copper bars, release info types itself over a starfield and a rainbow sine scroller carries the greetz">
 </p>
 
+<p align="center">
+  <a href="https://github.com/zeroznet/nadrbomz/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/zeroznet/nadrbomz/ci.yml?branch=main&style=flat-square&label=ci&labelColor=000000" alt="CI"></a>
+  <a href="https://github.com/zeroznet/nadrbomz/commits/main"><img src="https://img.shields.io/github/last-commit/zeroznet/nadrbomz?style=flat-square&labelColor=000000&color=ff5fff" alt="Last Commit"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/zeroznet/nadrbomz?style=flat-square&labelColor=000000&color=875fff" alt="License"></a>
+  <img src="https://img.shields.io/badge/shell-POSIX%20sh-00ffff?style=flat-square&labelColor=000000" alt="POSIX sh">
+</p>
+
 ```text
  ░▒▓█ S P E C S █▓▒░
 
@@ -25,6 +32,13 @@ FreeBSD base has no `curl`, so use `fetch`; the script falls back to it on its o
 
 ```sh
 fetch -q -o - https://raw.githubusercontent.com/zeroznet/nadrbomz/main/nadrbomz.sh | sh
+```
+
+To run only what you have reviewed, deploy from a local clone instead of GitHub:
+
+```sh
+git clone https://github.com/zeroznet/nadrbomz.git && cd nadrbomz
+NADRBOMZ_CLONE_URL="file://${PWD}" sh nadrbomz.sh
 ```
 
 Missing `git`, `zsh` or a downloader stops the run before anything is touched and prints the install command for your package manager. The outro ends with `exec zsh` and the `chsh` line for your OS.

@@ -773,8 +773,14 @@ EOF
 
   installed="${CLAUDE_DIR}/plugins/installed_plugins.json"
   present=0
+  builtin=0
   while IFS= read -r plugin; do
     [ -n "${plugin}" ] || continue
+    # Built-in plugins ship with the CLI and are not in any marketplace, so
+    # `claude plugin install` fails on them; the settings.json entry enables them.
+    case "${plugin}" in
+      *@builtin) builtin=$((builtin + 1)); continue ;;
+    esac
     if [ -f "${installed}" ] && jq -e --arg p "${plugin}" '.plugins | has($p)' "${installed}" >/dev/null 2>&1; then
       present=$((present + 1))
       continue
@@ -790,6 +796,9 @@ $(jq -r '.enabledPlugins // {} | to_entries[] | select(.value == true) | .key' "
 EOF
   if [ "${present}" -gt 0 ]; then
     report_skip "plugins" "${present} already installed"
+  fi
+  if [ "${builtin}" -gt 0 ]; then
+    report_skip "builtin plugins" "${builtin} enabled by settings.json"
   fi
 }
 

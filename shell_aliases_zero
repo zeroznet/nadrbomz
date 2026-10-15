@@ -50,7 +50,6 @@ alias vanguard='AUTOSSH_GATETIME=0 autossh -M 0 -t vanguard "screen -DRS main"'
 alias sentinel='AUTOSSH_GATETIME=0 autossh -M 0 -t sentinel "screen -DRS main"'
 alias s='sudo su -'
 alias si='sudo -i'
-alias ss='sudo -s'
 alias su='su -'
 
 # -----------------------------------------------------------------------------

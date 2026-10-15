@@ -134,15 +134,6 @@ elif [[ -f "$HOME/.ssh/keychain_enabled" ]] && command -v keychain >/dev/null 2>
 fi
 
 # -----------------------------------------------------------------------------
-# Optional autosuggest accept binding.
-# Disabled per your ask. Leave commented unless you want it back.
-# -----------------------------------------------------------------------------
-
-# if (( $+widgets[autosuggest-accept] )); then
-#   bindkey '^E' autosuggest-accept
-# fi
-
-# -----------------------------------------------------------------------------
 # Host-specific shell bits.
 # -----------------------------------------------------------------------------
 

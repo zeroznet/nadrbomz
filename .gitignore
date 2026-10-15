@@ -1,11 +1,21 @@
-.claude/settings.local.json
-.env
-.env.*
-*.swp
+# Editor / OS
+.vscode/
+.idea/
 .DS_Store
+*.swp
+
+# Claude Code local settings (per-developer permission allowlist; never committed)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# Claude Code session artifacts (handoff files, superpowers plans and specs; never committed)
 HANDOFF.md
 HANDOFF.md.bak
-.credentials.json
-claude/**/.credentials.json
 docs/
 .superpowers/
+
+# Local env / secrets
+.env
+.env.*
+.credentials.json
+claude/**/.credentials.json

@@ -14,8 +14,6 @@
 
 **Decision pending.** Worth a serious test of `mosh + Ptyxis-via-WSLg` or `mosh + WezTerm` before committing.
 
-## CLAUDE.md syncing and configuration
+## Per-project Claude memory
 
-Authored Claude config (`~/.claude` skills/commands/scripts/statusline/`settings.json`) and the workspace `~/dev/CLAUDE.md` + `HOWTO.md` are now synced by `nadrbomz.sh`; marketplace plugins reinstall from `settings.json` (declaration-only, always-latest).
-
-Still open: per-project memory (`~/.claude/projects/<hash>/memory/`) is path-encoded and project-scoped — decide whether it belongs in each project's repo rather than this dotfiles bootstrap.
+Per-project memory (`~/.claude/projects/<hash>/memory/`) is path-encoded and project-scoped — decide whether it belongs in each project's repo rather than this dotfiles bootstrap.

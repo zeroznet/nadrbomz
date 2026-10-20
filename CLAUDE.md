@@ -27,4 +27,4 @@ Adding or removing a numbered section in the script also renumbers the `NN/06` h
 
 ## Shell
 
-`nadrbomz.sh` is POSIX sh and must run on dash, bash, busybox ash and FreeBSD `sh`. `set -o pipefail` is POSIX.1-2024 and in FreeBSD `sh` since 12.1, hence its `SC3040` exception. Anything newer than that needs the same proof before use.
+`nadrbomz.sh` is POSIX sh and must run on dash, bash, busybox ash and FreeBSD `sh`. Baseline is the oldest sh still in common use (dash in Debian 12 / Ubuntu 24.04), not current POSIX: `set -o pipefail` is POSIX.1-2024 but dash only has it since Debian `0.5.12-8`, so the script does without it. CI runs a current dash and will not catch this class of break; check the oldest supported shell before using anything beyond POSIX.1-2008.

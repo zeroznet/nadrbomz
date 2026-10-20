@@ -2,10 +2,8 @@
 # scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Opus 4.8)
 
 set -eu
-# pipefail is POSIX.1-2024 and supported by dash, bash, busybox ash and FreeBSD
-# sh (12.1+), every sh this bootstrap targets.
-# shellcheck disable=SC3040
-set -o pipefail
+# No pipefail: dash before Debian 0.5.12-8 (Debian 12, Ubuntu 24.04) rejects it
+# and aborts the whole curl | sh run.
 
 NADRBOMZ_CLONE_URL="${NADRBOMZ_CLONE_URL:-https://github.com/zeroznet/nadrbomz.git}"
 CLAUDE_DIR="${HOME}/.claude"

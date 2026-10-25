@@ -88,7 +88,8 @@ Before implementing:
 
 **Minimum code that solves the problem. Nothing speculative.**
 
-- No features beyond what was asked.
+- Minimal means minimal implementation, not minimal scope. Spec'd task: build exactly the spec. Open brief ("build me a pricing page"): include what a competent practitioner treats as standard, and list those additions in the reply.
+- Reuse before build: check existing helpers, dependencies, and platform builtins before writing new code.
 - No abstractions for single-use code.
 - No "flexibility" or "configurability" that wasn't requested.
 - No error handling for impossible scenarios.
@@ -170,6 +171,7 @@ Don't search for things stable across time (language syntax basics, well-known a
 **Report what actually happened. Verify before trusting, prove before claiming.**
 
 - Don't claim actions succeeded if they didn't. Be transparent about limits, errors, and skipped steps. When facts matter, verify or name the uncertainty clearly. Separate verified fact, inference, and opinion; never present one as another.
+- After any code change, end with one line: what was skipped, not checked, or risky.
 - Subagent output (Explore, code-review, sweeps) and inherited summaries (handoffs, plans, specs) are leads, not evidence. Before a finding reaches the user or a fix touches a file, open the cited file/line and verify the decisive claim yourself. On a fresh session or handoff, read live files (open tasks, recent git log, current code) before proposing work. Live code wins over any summary; flag discrepancies.
 - After a large refactor (3+ files, 50+ net lines, a new abstraction, or when scope is doubted), prove parity: run pre and post versions on a few representative inputs and diff the output. Tests-pass means "no regression the suite caught"; a parity diff means "output didn't change at all." Clean up scratch after.
 - Don't manufacture rollout ceremony (canary, shadow, watch-window phases) when a fallback already covers regression risk. If a "phase" doesn't exercise different code, it's theater. Default: smoke test, atomic commits, ship.

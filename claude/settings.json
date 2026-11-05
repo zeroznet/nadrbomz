@@ -54,5 +54,6 @@
       "effortLevel": "high"
     }
   },
-  "feedbackSurveyRate": 0
+  "feedbackSurveyRate": 0,
+  "idleCompaction": false
 }

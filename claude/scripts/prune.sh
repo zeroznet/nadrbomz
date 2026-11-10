@@ -2,7 +2,8 @@
 # scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Fable 5)
 # Clear Claude Code ephemera: chat transcripts, prompt history, plan/session caches,
 # shell snapshots, telemetry, and daemon/agent-view state. Preserves credentials, settings,
-# plugins, skills, commands, agents, hooks, statusline, backups, downloads, and per-project memory/.
+# plugins, skills, commands, agents, hooks, statusline, backups, downloads, and per-project memory/
+# of projects still present in ~/dev.
 set -eu
 
 log()  { printf '%s\n' "$*"; }
@@ -33,8 +34,10 @@ Targets:
   ~/.claude/history.jsonl
   ~/.claude/stats-cache.json
   ~/.claude/projects/*/* (preserves */memory/)
-  /tmp/claude-* and ~/tmp/claude-*
+  ~/.claude/projects/* whose ~/dev/<name> no longer exists (memory/ included)
+  /tmp/claude-* and ~/tmp/claude*
   /tmp/cc-daemon-*
+  ~/.cache/claude*
 
 Preserved (never touched):
   ~/.claude/.credentials.json
@@ -49,7 +52,7 @@ Preserved (never touched):
   ~/.claude/scripts/
   ~/.claude/backups/
   ~/.claude/downloads/
-  ~/.claude/projects/*/memory/
+  ~/.claude/projects/*/memory/ (for ~/dev itself and projects still in ~/dev)
 EOF
 }
 
@@ -154,13 +157,42 @@ print_size() {
 }
 
 proj_root="$C/projects"
+dev_root="$HOME/dev"
+
+# Claude Code names a project dir after its cwd with every non-alphanumeric byte turned into "-".
+project_slug() { printf '%s' "$1" | sed 's/[^A-Za-z0-9]/-/g'; }
+
+# Project dirs under $proj_root that match neither ~/dev nor a direct child of it, one path per line.
+# A missing ~/dev yields nothing, so a moved or unmounted ~/dev cannot wipe every memory/.
+list_orphan_projects() {
+  [ -d "$proj_root" ] || return 0
+  if [ ! -d "$dev_root" ]; then
+    warn "Missing $dev_root; skipping orphan project cleanup"
+    return 0
+  fi
+  live=$(project_slug "$dev_root")
+  for d in "$dev_root"/*/; do
+    [ -d "$d" ] || continue
+    live="$live
+$(project_slug "${d%/}")"
+  done
+  for proj in "$proj_root"/*/; do
+    [ -d "$proj" ] || continue
+    proj="${proj%/}"
+    printf '%s\n' "$live" | grep -qxF -- "${proj##*/}" || printf '%s\n' "$proj"
+  done
+}
+
+orphan_projects=$(list_orphan_projects)
+
+is_orphan_project() { printf '%s\n' "$orphan_projects" | grep -qxF -- "$1"; }
 
 if [ "$apply" -eq 0 ]; then
   log "Targets:"
   for p in $simple_targets; do print_size "$p"; done
 
-  # /tmp/claude-* and ~/tmp/claude-* (skipping the active session subtree)
-  for glob in "/tmp/claude-"* "$HOME/tmp/claude-"*; do
+  # /tmp/claude-* and ~/tmp/claude* (skipping the active session subtree)
+  for glob in "/tmp/claude-"* "$HOME/tmp/claude"*; do
     [ -e "$glob" ] || continue
     sz=$(tmp_size_excluding_active "$glob" "$active_session")
     if [ -n "$active_session" ] && [ "${active_session#"$glob"/}" != "$active_session" ]; then
@@ -170,15 +202,21 @@ if [ "$apply" -eq 0 ]; then
     fi
   done
 
-  for glob in "/tmp/cc-daemon-"*; do
+  for glob in "/tmp/cc-daemon-"* "$HOME/.cache/claude"*; do
     [ -e "$glob" ] || continue
     print_size "$glob"
+  done
+
+  for proj in $orphan_projects; do
+    sz=$(du -sh "$proj" 2>/dev/null | awk '{print $1}')
+    printf '  %-8s  %s (not in ~/dev, memory/ deleted too)\n' "${sz:-?}" "$proj"
   done
 
   # projects: count non-memory entries per project
   if [ -d "$proj_root" ]; then
     for proj in "$proj_root"/*/; do
       [ -d "$proj" ] || continue
+      is_orphan_project "${proj%/}" && continue
       count=$(find "$proj" -mindepth 1 -maxdepth 1 ! -name memory 2>/dev/null | wc -l | tr -d ' ')
       if [ "$count" -gt 0 ]; then
         sz=$(find "$proj" -mindepth 1 ! -path "$proj/memory" ! -path "$proj/memory/*" -print0 2>/dev/null \
@@ -210,7 +248,7 @@ for p in $simple_targets; do
   rm -rf -- "$p"
 done
 
-for glob in "/tmp/claude-"* "$HOME/tmp/claude-"*; do
+for glob in "/tmp/claude-"* "$HOME/tmp/claude"*; do
   [ -e "$glob" ] || continue
   if [ -n "$active_session" ] && [ "${active_session#"$glob"/}" != "$active_session" ]; then
     total_kb=$((total_kb + $(tmp_kb_excluding_active "$glob" "$active_session")))
@@ -221,10 +259,15 @@ for glob in "/tmp/claude-"* "$HOME/tmp/claude-"*; do
   fi
 done
 
-for glob in "/tmp/cc-daemon-"*; do
+for glob in "/tmp/cc-daemon-"* "$HOME/.cache/claude"*; do
   [ -e "$glob" ] || continue
   total_kb=$((total_kb + $(path_kb "$glob")))
   rm -rf -- "$glob"
+done
+
+for proj in $orphan_projects; do
+  total_kb=$((total_kb + $(path_kb "$proj")))
+  rm -rf -- "$proj"
 done
 
 if [ -d "$proj_root" ]; then

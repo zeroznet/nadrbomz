@@ -1,5 +1,5 @@
 ---
-description: Clear Claude ephemera (transcripts, history, plans, caches, daemon/agent-view state). Dry-run by default; --apply stops the background daemon and deletes. Preserves credentials, settings, plugins, skills, commands, agents, hooks, and per-project memory/.
+description: Clear Claude ephemera (transcripts, history, plans, caches, daemon/agent-view state) and whole project dirs no longer in ~/dev. Dry-run by default; --apply stops the background daemon and deletes. Preserves credentials, settings, plugins, skills, commands, agents, hooks, and memory/ of projects still in ~/dev.
 argument-hint: "[--apply]"
 disable-model-invocation: true
 allowed-tools: Bash(~/.claude/scripts/prune.sh:*)

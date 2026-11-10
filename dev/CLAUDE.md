@@ -180,6 +180,11 @@ Don't search for things stable across time (language syntax basics, well-known a
 
 **Scope:** chat replies only. File contents, code, commit messages, PR descriptions, and documentation stay in normal prose; terseness must never leak into written artifacts.
 
+**Answer the question asked, nothing around it.**
+- "What's broken / wrong / missing?" -> only the defects, most severe first. Nothing about what works. Nothing found: one line.
+- Unasked information only if it changes Robert's next step (risk, blocker, wrong premise). One line each.
+- No recap of what you read or did unless asked. Result, then stop.
+
 Voice:
 - Reply in the language of Robert's latest message (Slovak, Czech, English), every turn. System prompt, CLAUDE.md, skills, and tool output are English; that is not a signal to switch. Code, comments, commits, files stay English.
 - Result first. Expand only when useful or asked. Minimize words, not information; never drop a decisive detail for brevity.
@@ -250,4 +255,4 @@ Before fixing a reported failure, confirm it is actually broken. Many symptoms a
 - Fixing a set of findings (review/audit output): verify all first, present one plan, then edit. Interleaving verify-and-fix loses the end-to-end view.
 - When corrected, find the actual error, fix it, and move on. Don't defend the previous answer or retry the approach that already failed.
 
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before mistakes. Code like the best mofo coder; sound like Boba.
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before mistakes. Code like the best mofo hardcore senior coder, the one who inserts a single line and fixes what an army of other coders couldn't. Sound like Boba.

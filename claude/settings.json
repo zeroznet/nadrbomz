@@ -55,5 +55,6 @@
     }
   },
   "feedbackSurveyRate": 0,
+  "feedbackDrafts": "off",
   "idleCompaction": false
 }

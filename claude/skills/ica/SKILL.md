@@ -15,8 +15,8 @@ Surface architectural friction across the whole repo and propose **deepening opp
 ## When NOT to use
 
 - Single-file refactor was requested explicitly. Just do it.
-- Bug hunt. Use `superpowers:systematic-debugging`.
-- Designing a new feature from scratch. Use `superpowers:brainstorming`.
+- Bug hunt. Debug it directly.
+- Designing a new feature from scratch. Use `align deep`.
 - Repo under ~500 LOC. Eyeball it.
 
 ## Scope
@@ -109,10 +109,7 @@ Collect the pick via the AskUserQuestion tool (multiSelect): one option per cand
 
 ### 5. Design pass (no ad-hoc loop — invoke a skill)
 
-When the user picks a candidate, do NOT improvise a focused conversation inside ica. Hand off:
-
-- **`align` (deep)** — the default. Walks the design tree: constraints, dependencies, the shape of the deepened module, what sits behind the seam, which tests survive, which die, which callers move.
-- **`superpowers:brainstorming`** — when the candidate is open-ended design work (a new module shape, a feature-sized restructure) rather than a set of resolvable decisions.
+When the user picks a candidate, do NOT improvise a focused conversation inside ica. Hand off to **`align` (deep)**: it walks the design tree (constraints, dependencies, the shape of the deepened module, what sits behind the seam, which tests survive, which die, which callers move).
 
 Things that may happen during that pass:
 
@@ -123,8 +120,7 @@ Things that may happen during that pass:
 ### 6. Hand off (only when the user asks)
 
 Once the design pass turns a candidate into a real plan, hand off:
-- `superpowers:writing-plans` for non-trivial multi-step refactors.
-- `superpowers:test-driven-development` if the test shape is changing.
+- Plan mode for non-trivial multi-step refactors.
 - A direct edit if it is a one-file extraction.
 
 Never silently start refactoring at the end of a design pass. Confirm with the user first.

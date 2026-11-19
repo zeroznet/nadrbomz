@@ -16,8 +16,7 @@ The win in both modes is the same: stop the agent from silently choosing for you
 
 - Trivial task with one obvious shape. Just do it.
 - Single decision already named and answered. Don't manufacture questions.
-- Bug hunt — use `superpowers:systematic-debugging`.
-- New feature from scratch with no prior thinking — use `superpowers:brainstorming` first, then come back.
+- Bug hunt. Debug it directly.
 - Architecture diagnosis — use `ica`.
 
 ## Mode detection
@@ -127,7 +126,7 @@ Then ask via one AskUserQuestion call: a single question, with the `Alternatives
 
 ## Hand off (deep mode, when done)
 
-- Plan is now clear and multi-step → `superpowers:writing-plans`.
+- Plan is now clear and multi-step → plan mode.
 - Plan is clear and single-step → just do it.
 - Plan revealed it should be reframed as a refactor → `ica`.
 - Decisions revealed a missing skill/command/setting the user wants to keep → mention `calibrate` so they can sweep at session end.

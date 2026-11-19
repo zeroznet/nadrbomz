@@ -1,6 +1,6 @@
 ---
 name: calibrate
-description: Persists what a session taught before it evaporates. Routes corrections, preferences, and tool-call noise into skills, commands, settings, CLAUDE.md, or auto-memory (config lane), and durable session facts such as open work, decisions, and operational facts into the project's canonical files (state lane). Sweeps the conversation, proposes a short numbered menu, applies only what the user picks. Run at session end, before /handoff.
+description: Persists what a session taught before it evaporates. Routes corrections, preferences, and tool-call noise into skills, commands, settings, CLAUDE.md, or auto-memory (config lane), and durable session facts such as open work, decisions, and operational facts into the project's canonical files (state lane). Sweeps the conversation, proposes a short numbered menu, applies only what the user picks. Run at session end.
 argument-hint: "[--light]"
 disable-model-invocation: true
 ---
@@ -13,13 +13,12 @@ Turn this session's hard-won lessons into durable configuration before they evap
 
 Calibrate is the bridge between "I keep correcting Claude on the same thing" and "Claude already knows." It does not store activity logs, summaries, or context — only the *deltas* that future sessions need.
 
-Two lanes, one sweep. **Config lane:** corrections, preferences, tool-call noise, workflow desires → skill files, commands, settings.json, CLAUDE.md, auto-memory. **State lane:** durable session facts — open work, operational facts, decisions with rationale — routed into the project's canonical files (TODO.md, owning docs, CLAUDE.md, auto-memory, rationale home) so nothing is lost when the session ends. Handoff writes the temporary bridge file; calibrate gives facts a permanent home.
+Two lanes, one sweep. **Config lane:** corrections, preferences, tool-call noise, workflow desires → skill files, commands, settings.json, CLAUDE.md, auto-memory. **State lane:** durable session facts — open work, operational facts, decisions with rationale — routed into the project's canonical files (TODO.md, owning docs, CLAUDE.md, auto-memory, rationale home) so nothing is lost when the session ends.
 
 ## When NOT to use
 
 - Session was trivial (one tweak, one answer). Nothing to calibrate — say so in one line.
-- You want a session bridge for a future session — use `handoff`.
-- You want to author decisions or architecture rationale from scratch — that's `superpowers:writing-plans`. Routing an already-made decision to its rationale home is the state lane's job, not excluded here.
+- You want to author decisions or architecture rationale from scratch — that's planning work, not a sweep. Routing an already-made decision to its rationale home is the state lane's job, not excluded here.
 - Mid-task. Calibrate is a sweep, not a checkpoint.
 
 ## Mode detection
@@ -95,9 +94,7 @@ When a target is in this table, edit the source, copy it over the deployed path 
 
 ## State lane
 
-The state lane extracts durable session facts and routes each into its canonical home, replacing what a HANDOFF.md would otherwise carry indefinitely.
-
-**Sources:** the current session, plus `$PWD/HANDOFF.md` if present (else `$PWD/HANDOFF.md.bak` when the session is empty).
+The state lane extracts durable session facts from the current session and routes each into its canonical home.
 
 **Fact routing table:**
 
@@ -115,9 +112,6 @@ The state lane extracts durable session facts and routes each into its canonical
 **Rules:** read the project's canonical files first (CLAUDE.md, TODO.md, README, owning docs, memory index) — the project's own rules win over the table; one owner per fact; rewrite in the destination's voice; update stale copies in place, never duplicate.
 
 **Accountability gate:** every extracted fact ends in exactly one bucket — **routed** (path), **already documented** (path), or **dropped** (reason). State-lane items the user declined at pick time count as dropped with reason "user skipped". No fourth bucket; loop until the list is empty. The applied report includes this routing table.
-
-**Bridge consumption:** if HANDOFF.md was a source and at least one state-lane item was applied, after applying run `mv -f -- HANDOFF.md HANDOFF.md.bak`; do not write a new HANDOFF.md. If every state-lane item was declined, leave HANDOFF.md in place.
-
 ## Workflow
 
 ### 1. Scope the scan

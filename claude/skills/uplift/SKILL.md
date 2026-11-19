@@ -1,6 +1,6 @@
 ---
 name: uplift
-description: Brings an older project up to the practices the user already applies in newer ones. Compares the target repo's scaffolding (CI workflows, release and vuln-watch jobs, .gitignore, lint configs, script conventions, CLAUDE.md, README, TODO, version pins) against the freshest version of the same thing across the other git projects in ~/dev and the workspace CLAUDE.md, then proposes what to upgrade, add, or delete. Use when the user says "/uplift", "bring this repo up to date with my newer projects", "this project is outdated", or "make it consistent with X".
+description: Brings an older project up to the practices the user already applies in newer ones. Compares the target repo's scaffolding (CI workflows, release and vuln-watch jobs, .gitignore, lint configs, script conventions, CLAUDE.md, README, TODO, version pins, and anything else that shows how a project is set up) against the freshest version of the same thing across the other git projects in ~/dev and the workspace CLAUDE.md, then proposes what to upgrade, add, or delete. Use when the user says "/uplift", "bring this repo up to date with my newer projects", "this project is outdated", or "make it consistent with X".
 argument-hint: "[path] [--ref project,...]"
 ---
 
@@ -27,7 +27,7 @@ Application logic and architecture are out of scope; that is `ica`.
 
 ### 1. Inventory
 
-For the target and every reference, list the practice artifacts present and the date each last changed (`git -C <repo> log -1 --format=%cs -- <path>`). Concerns to cover, adapting to what actually exists:
+For the target and every reference, list the practice artifacts present and the date each last changed (`git -C <repo> log -1 --format=%cs -- <path>`). The table is a starting point, not a limit: any file or habit that shows how a project is set up rather than what it does counts (Dockerfiles, Makefiles, issue and PR templates, SECURITY.md, test layout, commit style, branch protection, and so on). Walk the references' top level and dotfiles to find concerns the table misses.
 
 | Concern | Typical files |
 |---|---|

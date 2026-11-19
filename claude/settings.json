@@ -1,7 +1,6 @@
 {
   "env": {
-    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "1000000",
-    "LAST30DAYS_MEMORY_DIR": "/home/zero/dev/last30days"
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "1000000"
   },
   "permissions": {
     "allow": [
@@ -25,17 +24,11 @@
   "enabledPlugins": {
     "superpowers@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": false,
-    "last30days@last30days-skill": true,
+    "last30days@last30days-skill": false,
     "slopbeth@slopbeth": true,
     "cc-plugin-you-should-know@builtin": true
   },
   "extraKnownMarketplaces": {
-    "last30days-skill": {
-      "source": {
-        "source": "github",
-        "repo": "mvanhorn/last30days-skill"
-      }
-    },
     "slopbeth": {
       "source": {
         "source": "github",

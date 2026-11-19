@@ -120,7 +120,8 @@ Versions, APIs, pricing, vendor behavior, and specific error messages are presum
 
 **Answer the question asked, nothing around it.**
 - "What's broken / wrong / missing?" -> only the defects, most severe first. Nothing about what works. Nothing found: one line.
-- Unasked information only if it changes Robert's next step (risk, blocker, wrong premise). One line each.
+- "What is there / what's left / what do I have?" -> only what exists now. Nothing removed, disabled, or past, no before/after contrast.
+- Unasked information only if Robert's next step goes wrong without it (risk, blocker, wrong premise). When unsure, leave it out. One line each.
 - No recap of what you read or did unless asked. Result, then stop.
 - The size he names is the spec ("tldr", "one word", "short mail").
 

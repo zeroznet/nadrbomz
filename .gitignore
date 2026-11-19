@@ -13,3 +13,7 @@
 .env.*
 .credentials.json
 claude/**/.credentials.json
+
+# Claude Code session artifacts (per-session handoff files; never committed)
+HANDOFF.md
+HANDOFF.md.bak

@@ -78,14 +78,23 @@ jobs:
               exit 1
             fi
           done
-          for target in .zshrc .zshenv .bashrc .shell_aliases .screenrc .tmux.conf \
-            .config/nvim/init.vim .config/fastfetch/config.jsonc .ssh/config \
-            .claude/settings.json .claude/statusline-command.sh .claude/scripts/prune.sh \
-            dev/CLAUDE.md dev/HOWTO.md .oh-my-zsh/oh-my-zsh.sh; do
-            if [ ! -s "${home}/${target}" ]; then
+          # The README Target column is the deploy list the script must match, so
+          # a deploy line dropped from nadrbomz.sh fails here. WSL tools only
+          # deploy on WSL kernels, which the runner is not.
+          targets="$(awk -F'|' '/^\| `[^`]+` \| `~\// { t=$3; gsub(/[ `]/, "", t); print substr(t, 3) }' README.md)"
+          if [ -z "${targets}" ]; then
+            echo "::error::no deploy targets parsed from README.md"
+            exit 1
+          fi
+          for target in ${targets} .oh-my-zsh/oh-my-zsh.sh; do
+            case "${target}" in
+              .local/bin/*) continue ;;
+              */) [ -n "$(ls -A "${home}/${target}" 2>/dev/null)" ] ;;
+              *)  [ -s "${home}/${target}" ] ;;
+            esac || {
               echo "::error::missing after bootstrap: ~/${target}"
               exit 1
-            fi
+            }
           done
           if [ ! -f "${home}/.zshrc.bak" ]; then
             echo "::error::second pass did not back up ~/.zshrc"

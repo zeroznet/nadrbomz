@@ -8,10 +8,7 @@ Project-specific context for working in this repo. Workspace-wide rules in `/hom
 
 ## Parallel lists
 
-The deploy list lives in `nadrbomz.sh` (`deploy_file` / `deploy_tree` calls) and is mirrored in two places. Change all three in the same commit:
-
-- the Source/Target tables in `README.md`, under the matching `NN/06` section
-- the target list in the `Bootstrap smoke run` step of `.github/workflows/ci.yml`
+The deploy list lives in `nadrbomz.sh` (`deploy_file` / `deploy_tree` calls) and is mirrored in the Source/Target tables in `README.md`, under the matching `NN/06` section. Change both in the same commit; the CI smoke run reads its target list from those README tables and fails when a target is not deployed.
 
 Adding or removing a numbered section in the script also renumbers the `NN/06` headings in `README.md`.
 

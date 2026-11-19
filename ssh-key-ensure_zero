@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # scripted/written by Robert Bopko (github.com/zeroznet) with Boba Bott (Claude Fable 5.1)
 # Ensure the shared ssh-agent (fixed socket, also exported by ~/.zshenv and
-# ~/.bashrc) is up and holds the key. Every WT tab (local via the rc files,
+# ~/.shell_aliases) is up and holds the key. Every WT tab (local via the rc files,
 # remote via wt-connect) runs this, so the passphrase is asked exactly once per
 # boot: the load lock serializes tabs, the first one prompts, the rest wait and
 # find the key already loaded.

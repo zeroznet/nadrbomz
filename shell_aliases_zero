@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
-# Shared aliases and shell-safe functions for Bash and Zsh.
-# Source from both ~/.zshrc and ~/.bashrc.
+# Shared aliases, shell-safe functions, SSH agent setup and host-specific bits
+# for Bash and Zsh. Source from both ~/.zshrc and ~/.bashrc.
 # -----------------------------------------------------------------------------
 
 # Guard: interactive shells only.
@@ -37,6 +37,24 @@ esac
 # -----------------------------------------------------------------------------
 
 __rb_host="${HOST:-${HOSTNAME:-$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo unknown)}}"
+
+# -----------------------------------------------------------------------------
+# SSH agent.
+# Local WSL session: shared fixed-socket agent, passphrase asked once per boot.
+# zsh already exports the socket from ~/.zshenv; bash does not read that file,
+# so it is exported here too. Anywhere else: keychain when
+# ~/.ssh/keychain_enabled exists.
+# -----------------------------------------------------------------------------
+
+if [ -n "${WSL_DISTRO_NAME:-}" ] && [ -z "${SSH_CONNECTION:-}" ]; then
+  export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/ssh-agent.sock"
+  [ -x "$HOME/.local/bin/ssh-key-ensure" ] && "$HOME/.local/bin/ssh-key-ensure"
+elif [ -f "$HOME/.ssh/keychain_enabled" ] && command -v keychain >/dev/null 2>&1; then
+  __rb_keychain_args="$(cat "$HOME/.ssh/keychain_enabled")"
+  keychain -q $__rb_keychain_args
+  [ -f "$HOME/.keychain/${__rb_host}-sh" ] && . "$HOME/.keychain/${__rb_host}-sh"
+  unset __rb_keychain_args
+fi
 
 # -----------------------------------------------------------------------------
 # Core aliases.
@@ -115,19 +133,29 @@ alias di='dk images'
 alias dl='dk logs'
 
 # -----------------------------------------------------------------------------
-# Host-specific aliases.
+# Host-specific bits.
 # -----------------------------------------------------------------------------
 
 if [ "$__rb_host" = "USDSCWN34032527" ]; then
+  export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+  export AZURE_CLI_DISABLE_CONNECTION_VERIFICATION=anycontent
+
   alias wcd='cd "/c/Documents and Settings/rbopko"'
 
   if command -v kubectl >/dev/null 2>&1; then
+    if [ -n "${ZSH_VERSION:-}" ]; then
+      source <(kubectl completion zsh)
+    else
+      source <(kubectl completion bash)
+    fi
     alias k='kubectl'
     alias kn='kubectl ns'
     alias kubens='kubectl ns'
     alias kc='kubectl ctx'
     alias kubectx='kubectl ctx'
   fi
+else
+  unset MAILCHECK
 fi
 
 unset __rb_host

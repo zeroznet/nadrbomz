@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # ~/.bashrc
 # Personal interactive Bash config.
-# Shared aliases live in ~/.shell_aliases.
+# Shared aliases, SSH agent and host bits live in ~/.shell_aliases.
 # -----------------------------------------------------------------------------
 
 # Guard: interactive shells only.
@@ -109,39 +109,6 @@ if [ -f "$HOME/incognito_shell" ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# SSH agent.
-# Local WSL session: shared fixed-socket agent, passphrase asked once per boot.
-# Bash does not read ~/.zshenv, so the socket is exported here too. Anywhere
-# else: keychain when ~/.ssh/keychain_enabled exists.
-# -----------------------------------------------------------------------------
-
-HOST="${HOST:-${HOSTNAME:-$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo unknown)}}"
-
-if [ -n "${WSL_DISTRO_NAME:-}" ] && [ -z "${SSH_CONNECTION:-}" ]; then
-  export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$UID}/ssh-agent.sock"
-  [ -x "$HOME/.local/bin/ssh-key-ensure" ] && "$HOME/.local/bin/ssh-key-ensure"
-elif [ -f "$HOME/.ssh/keychain_enabled" ] && command -v keychain >/dev/null 2>&1; then
-  keychain_args="$(cat "$HOME/.ssh/keychain_enabled")"
-  keychain -q $keychain_args
-  [ -f "$HOME/.keychain/${HOST}-sh" ] && . "$HOME/.keychain/${HOST}-sh"
-fi
-
-# -----------------------------------------------------------------------------
-# Host-specific shell bits.
-# -----------------------------------------------------------------------------
-
-if [ "$HOST" = "USDSCWN34032527" ]; then
-  if command -v kubectl >/dev/null 2>&1; then
-    source <(kubectl completion bash)
-  fi
-
-  export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-  export AZURE_CLI_DISABLE_CONNECTION_VERIFICATION=anycontent
-else
-  unset MAILCHECK
-fi
-
-# -----------------------------------------------------------------------------
 # Bash completion.
 # -----------------------------------------------------------------------------
 
@@ -152,7 +119,7 @@ elif [ -r /etc/bash_completion ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# Shared aliases and functions.
+# Shared aliases, functions, SSH agent and host-specific bits.
 # -----------------------------------------------------------------------------
 
 [ -r "$HOME/.shell_aliases" ] && . "$HOME/.shell_aliases"

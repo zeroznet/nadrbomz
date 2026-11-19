@@ -12,6 +12,7 @@
 | Hostile second opinion before merge | `/code-review` |
 | Touched auth, crypto, perms, SQL | `/security-review` |
 | Repo feels tangled, structure is wrong | `/ica` |
+| Old repo lags behind practices of newer ones | `/uplift [path]` |
 | Plan exists, gut says gaps | `/align deep` |
 | Deep, fact-checked research on a topic | `/deep-research <question>` |
 | What people say about a topic lately | `/last30days <topic>` |

@@ -12,12 +12,12 @@ die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 usage() {
   cat <<'EOF'
-Usage: prune.sh [--apply|-a] [--help|-h]
+Usage: prune.sh [--dry-run|-n] [--apply|-a] [--help|-h]
 
-Default is dry-run: lists targets and sizes without deleting.
---apply    actually delete.
---apply also runs "claude daemon stop --any" first so the supervisor cannot hold
-stale agent-view state in memory.
+Default is apply: stops the daemon with "claude daemon stop --any" (so the
+supervisor cannot hold stale agent-view state in memory), then deletes.
+--dry-run  list targets and sizes without deleting.
+--apply    same as the default.
 
 Targets:
   ~/.claude/file-history/
@@ -56,9 +56,10 @@ Preserved (never touched):
 EOF
 }
 
-apply=0
+apply=1
 case "${1-}" in
-  --apply|-a) apply=1 ;;
+  --dry-run|-n) apply=0 ;;
+  --apply|-a) ;;
   --help|-h)  usage; exit 0 ;;
   '') ;;
   *) die "Unknown arg: $1 (try --help)" ;;
@@ -228,9 +229,9 @@ if [ "$apply" -eq 0 ]; then
 
   log ""
   if command -v claude >/dev/null 2>&1; then
-    log '  note: --apply will run "claude daemon stop --any" first (flushes agent-view state)'
+    log '  note: a real run will run "claude daemon stop --any" first (flushes agent-view state)'
   fi
-  log "Dry-run. Re-run with --apply to delete."
+  log "Dry-run. Re-run without --dry-run to delete."
   exit 0
 fi
 

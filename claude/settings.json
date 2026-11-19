@@ -38,7 +38,6 @@
   },
   "effortLevel": "high",
   "tui": "fullscreen",
-  "skipWorkflowUsageWarning": true,
   "theme": "dark",
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,

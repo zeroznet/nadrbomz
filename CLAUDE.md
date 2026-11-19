@@ -22,7 +22,7 @@ Adding or removing a numbered section in the script also renumbers the `NN/06` h
 ## Claude config
 
 - `claude/settings.json` is the source of truth; the live `~/.claude/settings.json` is a deployed copy.
-- Live `modelSettings.claude-sonnet-*.effortLevel` drift is intentional (Robert switches it by hand). Do not report it or sync it back.
+- Live `modelSettings.*.effortLevel` drift is intentional (Robert switches it by hand). Do not report it or sync it back.
 - `*@builtin` plugins ship with the CLI and are only enabled in `enabledPlugins`; `bootstrap_claude_plugins` skips them because `claude plugin install` rejects them.
 
 ## Shell

@@ -154,20 +154,7 @@ grep -rn "<deleted-thing>" --include="*.md" --include="*.sh" --include="*.json" 
 
 ### 12. Default to Latest Stable
 
-**Always pick the current stable version when building, installing, or pinning. Older = more known CVEs, regardless of "stability."**
-
-This covers base images, language toolchains, distro packages, language deps (Go modules, npm, gems), vendor APIs and SDKs (skim the changelog for breaking changes since the previous pin), and dev tooling itself. For CLIs and build tools, install from the upstream project's own channel; distro defaults (`apt install gh`, `brew install pnpm`) are often months behind.
-
-**Pin by immutable identity, track current.** `FROM alpine@sha256:...` is correct (reproducible). `FROM alpine:3.21` two minor versions behind the current stable, with no documented reason, is not. The pin gives you reproducibility; the version gives you patched code. You need both.
-
-**Exceptions, all of which must be documented in a comment next to the pin:**
-- Upstream project pins a specific version we have to follow (e.g. tracking `containers/gvisor-tap-vsock v0.8.8` because we built against that release's contracts and verified them).
-- A frozen artifact (released rootfs, signed binary) where bumping anything is a release event, not a routine update.
-- A known regression in newer versions where the fix isn't merged upstream yet.
-
-"It works on the old version" is not an exception. "Bumping might break tests" is not an exception; find out, and if it does, fix the test.
-
-**Check before any build, install, or pull.** A version number from memory is presumed wrong (#7). Check a fresh source: the upstream release page, `gh release list --repo <owner>/<repo>`, `apt-cache policy`, `go list -m -u all`. This applies to quick test images and throwaway experiments too; a stale base still pulls known-vulnerable code onto the machine.
+When building, installing, or pinning anything (base images, toolchains, distro packages, language deps, SDKs, CLIs), use the current stable release, checked from a fresh source (upstream releases, `gh release list`, `apt-cache policy`, `go list -m -u all`), never from memory. Install CLIs from upstream's own channel, not the distro. Pin by immutable identity (`image@sha256:...`) and keep it current. An older pin needs a comment naming the reason: an upstream contract we follow, a frozen release artifact, or an unfixed regression. "Works on the old one" and "might break tests" are not reasons.
 
 ### 13. Diagnose Before Fixing
 

@@ -21,6 +21,7 @@ Two lanes, one sweep. **Config lane:** corrections, preferences, tool-call noise
 
 - Session was trivial (one tweak, one answer). Nothing to calibrate — say so in one line.
 - You want to author decisions or architecture rationale from scratch — that's planning work, not a sweep. Routing an already-made decision to its rationale home is the state lane's job, not excluded here.
+- You want to carry the exact working state of an unfinished task into the next session or onto another host. Use `handoff`.
 
 Ending mid-task is fine: unfinished work is exactly what the state lane captures.
 

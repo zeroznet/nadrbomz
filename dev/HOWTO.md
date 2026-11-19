@@ -8,6 +8,7 @@
 | New feature or project | `/align deep`, then plan mode (shift+tab) |
 | Resuming a project | `claude -r` |
 | End of session | `/calibrate` |
+| Context is large, or switching host mid-task | `/handoff "<focus>"`, then `/handoff --apply` in the new session (another host: paste the printed block) |
 | Polish your last diff | `/simplify` |
 | Hostile second opinion before merge | `/code-review` |
 | Touched auth, crypto, perms, SQL | `/security-review` |

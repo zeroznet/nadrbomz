@@ -41,7 +41,7 @@ A file is a delete candidate when it is neither reachable from an entry point no
 | Dead workflow | a CI job for a removed feature, target, or platform |
 | Superseded | an old version kept beside its replacement (`foo.sh` and `foo2.sh`, `old/`, `*.orig`) |
 | Committed output | a generated file the build recreates anyway (unless the repo ships it on purpose, as a banner or a release artifact) |
-| Leftover | `*.bak`, `HANDOFF*`, scratch notes, empty files, debug dumps |
+| Leftover | `*.bak` (including `HANDOFF.md.bak`), scratch notes, empty files, debug dumps; a live `HANDOFF.md` is an in-flight bridge, not a leftover |
 
 Text files and memory get a second pass, section by section and entry by entry, because a needed file can still hold stale content:
 

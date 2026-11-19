@@ -1,6 +1,6 @@
 ---
 name: calibrate
-description: Persists what a session taught before it evaporates. Routes corrections, preferences, and tool-call noise into skills, commands, settings, CLAUDE.md, or auto-memory (config lane), and durable session facts such as open work, decisions, and operational facts into the project's canonical files (state lane). Sweeps the conversation, proposes a short numbered menu, applies only what the user picks. Run at session end.
+description: Makes sure nothing important is lost when a session ends, without writing a handoff file. Routes corrections, preferences, and tool-call noise into skills, commands, settings, CLAUDE.md, or auto-memory (config lane), and the session's open work, unpushed or uncommitted state, pending steps, open questions, decisions, and operational facts into the project's canonical files (state lane). Sweeps the conversation and git state, proposes a selective numbered menu, applies only what the user picks. Run at session end, finished or mid-task.
 argument-hint: "[--light]"
 disable-model-invocation: true
 ---
@@ -15,11 +15,14 @@ Calibrate is the bridge between "I keep correcting Claude on the same thing" and
 
 Two lanes, one sweep. **Config lane:** corrections, preferences, tool-call noise, workflow desires → skill files, commands, settings.json, CLAUDE.md, auto-memory. **State lane:** durable session facts — open work, operational facts, decisions with rationale — routed into the project's canonical files (TODO.md, owning docs, CLAUDE.md, auto-memory, rationale home) so nothing is lost when the session ends.
 
+**Selection test:** imagine a fresh session opening this project tomorrow with none of this conversation. Keep a fact if, without it, that session would get something wrong, redo work, repeat a mistake, or miss a step still owed. Drop everything else, however interesting. Selective means passing this test, not hitting a count: a fact that passes is never cut to keep the menu short.
+
 ## When NOT to use
 
 - Session was trivial (one tweak, one answer). Nothing to calibrate — say so in one line.
 - You want to author decisions or architecture rationale from scratch — that's planning work, not a sweep. Routing an already-made decision to its rationale home is the state lane's job, not excluded here.
-- Mid-task. Calibrate is a sweep, not a checkpoint.
+
+Ending mid-task is fine: unfinished work is exactly what the state lane captures.
 
 ## Mode detection
 
@@ -32,7 +35,7 @@ Light is for when tokens are tight or the session was short and you just want th
 
 ## Signal taxonomy
 
-Only these types of signals are worth routing. Anything else is noise — drop it.
+Config-lane signals. Only these types are worth routing; anything else is noise. State-lane facts have their own table under State lane.
 
 | Signal | Symptom | Likely target |
 |---|---|---|
@@ -54,7 +57,7 @@ If a signal does not match any row above, do not propose it. The point of calibr
 
 Filter ruthlessly. Skip if:
 
-- The signal is momentary task state (what file we're editing right now, mid-edit progress) with no bearing past this session — distinct from durable open work/next steps, which the state lane routes to a task file.
+- The signal is momentary state that ends with the session (which file is open, a scratch path already deleted). Work that outlives the session is not momentary: an uncommitted change, a pending push, a half-finished step, or a step owed on another host is open work for the state lane.
 - The signal duplicates content already in CLAUDE.md, an existing memory file, or an existing skill. Read before proposing.
 - The signal is a code pattern, git-history fact, or architectural shape — those are derivable by reading the repo.
 - The signal is a one-off frustration with no signal of recurrence (user grumbled once, moved on).
@@ -94,13 +97,15 @@ When a target is in this table, edit the source, copy it over the deployed path 
 
 ## State lane
 
-The state lane extracts durable session facts from the current session and routes each into its canonical home.
+The state lane extracts durable session facts and routes each into its canonical home, so the next session resumes from the project files alone.
+
+**Sources:** the conversation, plus the live state of every repo the session touched: `git status --short` (uncommitted work) and `git log --oneline @{u}..HEAD` (unpushed commits). Look in the conversation for the things that fall through cracks: steps the user still owes on another host, claims left unverified, questions asked but not answered, decisions deferred ("later", "after X").
 
 **Fact routing table:**
 
 | Fact kind | Destination |
 |---|---|
-| Open work, next steps, watch items | task file (TODO.md or equivalent) |
+| Open work, next steps, watch items, pending pushes, steps owed on other hosts, open questions, unverified claims | task file (TODO.md or equivalent); if the project has none, a `project` auto-memory entry, since it loads in every session of this project |
 | Operational facts: setup steps, cron tables, env vars | the runbook/doc owning that topic |
 | Behavior/structure changes that make the playbook stale | CLAUDE.md |
 | Constraint tied to one script/module | that file's usage()/comment, or its owning doc |
@@ -112,6 +117,7 @@ The state lane extracts durable session facts from the current session and route
 **Rules:** read the project's canonical files first (CLAUDE.md, TODO.md, README, owning docs, memory index) — the project's own rules win over the table; one owner per fact; rewrite in the destination's voice; update stale copies in place, never duplicate.
 
 **Accountability gate:** every extracted fact ends in exactly one bucket — **routed** (path), **already documented** (path), or **dropped** (reason). State-lane items the user declined at pick time count as dropped with reason "user skipped". No fourth bucket; loop until the list is empty. The applied report includes this routing table.
+
 ## Workflow
 
 ### 1. Scope the scan
@@ -120,12 +126,14 @@ Take the scope from the mode table. Note cwd, which CLAUDE.md applies, and the a
 
 ### 2. Extract signals
 
-Walk the scoped turns. For each candidate signal:
+Walk the scoped turns and the git state from the state-lane sources. For each config-lane signal:
 
 - Quote the user verbatim (1 short line, paraphrase only if quote would be too long).
 - Tag with one signal type from the taxonomy above.
 - Note whether it recurred (count occurrences). A single occurrence is fine to propose if it's an unambiguous preference statement.
 - Drop anything that fails the "must not propose" filter.
+
+For each state-lane fact, apply the selection test. Write the fact so it stands alone tomorrow: concrete paths, commit hashes, hosts, and commands, never "as discussed" or "the thing above".
 
 ### 3. Route + verify
 
@@ -161,7 +169,7 @@ Skipped: <one line naming the dropped signals, so the user can override>
 Collect the pick via the AskUserQuestion tool: one question per theme (multiSelect when the theme has several items; a save/drop pair when it has one), option label = number + short title, description = the one-line summary. Free-text "Other" covers previews and edits.
 
 Hard rules for this step:
-- Cap at top 5 proposals. Long tail goes in "Skipped"; the user can ask for more in chat.
+- Config lane: cap at top 5 proposals; the long tail goes in "Skipped" and the user can ask for more. State lane: no cap, every fact that passes the selection test is listed; merge related facts with one home into one item to keep the menu short.
 - Every proposal names its destination file (short path is fine; keep the absolute path for apply time).
 - The one-line summary must say the substance ("save: subagents run on sonnet, haiku for trivia"), not a label ("save a model preference").
 - Found nothing? Say so in one line and stop. Do not pad.

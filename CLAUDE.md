@@ -16,7 +16,7 @@ Adding or removing a numbered section in the script also renumbers the `NN/06` h
 
 ## Banner
 
-`assets/cracktro.svg` is generated from the intro awk inside `nadrbomz.sh` (logo, palettes, credits, scroller). After any intro change, run `python3 assets/render-cracktro.py` and commit the SVG with it. CI fails on a stale banner.
+`assets/cracktro.svg` is generated from the intro awk inside `nadrbomz.sh` (logo, palettes, credits, scroller). After any intro change, run `python3 assets/render-cracktro.py` and commit the SVG with it. CI fails on a stale banner. `assets/social.png` is the GitHub social preview (Settings > Social preview), a still of the banner's final frame; reshoot it when the banner changes.
 
 ## Claude config
 

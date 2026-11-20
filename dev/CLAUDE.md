@@ -71,7 +71,7 @@ Pure config files (ssh config, rc files, dotfiles) do not get the attribution he
 
 **No § Sign:** Never write the paragraph/section sign `§` into files, code, comments, plans, or output. Use `#` instead when referring to sections, items, or numbered points.
 
-**Prose:** every piece of prose you write into a file or public text (docs, README, comments, commits, PR, issue, post) follows these writing rules (Orwell, 1946):
+**Prose:** everything you write (chat replies, docs, README, comments, commits, PR, issue, post) follows these writing rules (Orwell, 1946); in chat, #9 terseness still applies:
 1. No printed-cliche metaphors; use a live image or none.
 2. No long word where a short one works (use, not utilize).
 3. Cut every word that can be cut (to, not in order to).

@@ -264,6 +264,7 @@ deploy_dotfiles() {
   deploy_file "${CLONE_DIR}/init.vim_zero" "${HOME}/.config/nvim/init.vim" "init.vim"
   deploy_file "${CLONE_DIR}/fastfetch_zero" "${HOME}/.config/fastfetch/config.jsonc" "fastfetch config"
   deploy_file "${CLONE_DIR}/ssh_config_zero" "${HOME}/.ssh/config" "ssh config"
+  deploy_file "${CLONE_DIR}/gitignore_zero" "${HOME}/.config/git/ignore" "git ignore"
 }
 
 is_wsl() {

@@ -33,7 +33,7 @@ For the target and every reference, list the practice artifacts present and the 
 |---|---|
 | CI | `.github/workflows/*` (triggers, permissions, action pins, matrix, caching) |
 | Release and supply chain | release workflows, vuln scanning, dependabot or renovate |
-| Repo hygiene | `.gitignore`, `.gitattributes`, `.editorconfig` |
+| Repo hygiene | `.gitignore` (its top block must match the body of `nadrbomz/gitignore_zero`), `.gitattributes`, `.editorconfig` |
 | Lint and format | shellcheck, golangci-lint, pre-commit, formatter configs |
 | Scripts | attribution header, `set -eu`, helpers, `usage()`, POSIX vs bash |
 | Docs | project `CLAUDE.md`, README structure, LICENSE, TODO form |

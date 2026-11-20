@@ -1,0 +1,37 @@
+# -----------------------------------------------------------------------------
+# ~/.config/git/ignore
+# Global git excludes, and the baseline block every ~/dev repo copies to the top
+# of its own .gitignore so clones on hosts without this file stay covered.
+# -----------------------------------------------------------------------------
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Claude Code local state and session artifacts
+**/.claude/settings.local.json
+**/.claude/scheduled_tasks.lock
+HANDOFF.md
+HANDOFF.md.bak
+
+# Secrets
+.env
+.env.*
+!.env.example
+.credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# Leftovers
+*.bak
+*.orig
+*.rej
+*.tmp

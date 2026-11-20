@@ -10,6 +10,8 @@ Project-specific context for working in this repo. Workspace-wide rules in `/hom
 
 The deploy list lives in `nadrbomz.sh` (`deploy_file` / `deploy_tree` calls) and is mirrored in the Source/Target tables in `README.md`, under the matching `NN/06` section. Change both in the same commit; the CI smoke run reads its target list from those README tables and fails when a target is not deployed.
 
+The body of `gitignore_zero` (everything below its banner) is also copied verbatim to the top of each `~/dev` repo's `.gitignore`, so clones on hosts without the global file stay covered. Change it here first, then sync the copies.
+
 Adding or removing a numbered section in the script also renumbers the `NN/06` headings in `README.md`.
 
 ## Banner

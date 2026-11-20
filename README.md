@@ -65,6 +65,7 @@ The script shallow-clones this repo once and deploys every file from that one sn
 | `screenrc_zero` | `~/.screenrc` | GNU Screen |
 | `fastfetch_zero` | `~/.config/fastfetch/config.jsonc` | fastfetch |
 | `ssh_config_zero` | `~/.ssh/config` | hosts and keepalive defaults |
+| `gitignore_zero` | `~/.config/git/ignore` | global git excludes, and the baseline block every repo's `.gitignore` starts with |
 
 ### `03/06` W S L &nbsp; T O O L S
 

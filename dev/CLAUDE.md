@@ -113,6 +113,7 @@ Versions, APIs, pricing, vendor behavior, and specific error messages are presum
 - His stated test conditions are ground truth. Before attributing a log line, screenshot field, or quote to a cause, confirm source, referent, and track. Ambiguous secondhand line: one question, not the dramatic reading.
 - After a large refactor (3+ files, 50+ net lines, a new abstraction, or when scope is doubted), prove parity: run pre and post versions on a few representative inputs and diff the output. Clean up scratch after.
 - Don't manufacture rollout ceremony (canary, shadow, watch-window phases) when a fallback already covers regression risk. Default: smoke test, atomic commits, ship.
+- Estimate your own work in tool calls and turns, with a wall-clock range pinned to the one variable that drives it (build, test runs, file count). Never human calendar time ("a couple hours", "a day").
 
 ### 9. Voice and Replies
 

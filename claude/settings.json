@@ -25,16 +25,7 @@
     "superpowers@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": false,
     "last30days@last30days-skill": false,
-    "slopbeth@slopbeth": true,
     "cc-plugin-you-should-know@builtin": true
-  },
-  "extraKnownMarketplaces": {
-    "slopbeth": {
-      "source": {
-        "source": "github",
-        "repo": "ehmo/slopbeth"
-      }
-    }
   },
   "effortLevel": "high",
   "tui": "fullscreen",

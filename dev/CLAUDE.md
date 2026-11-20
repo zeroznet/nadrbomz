@@ -50,7 +50,7 @@ Always fetch before committing to a shared branch; if remote is ahead, rebase be
 
 Commit freely. Never `git push` without explicit per-request authorization: a "yes" earlier in the session does not authorize a later batch; ask again for each. Don't let unpushed commits silently accumulate: if a push wasn't approved and new work lands on top, re-surface the pending commit when asking. Unpushed count only when asking to push or at session end, never as a footer every turn. Never bundle `git add && git commit && git push` in one command; commit, then ask, then push alone. When dispatching implementer subagents, instruct them commit-only; otherwise they follow this section and push unsupervised. Verify with `git log origin/main..HEAD` after subagent work.
 
-Public text (PR, issue, comment, post): draft first, post only on "pošli". Keep his wording, don't repeat the thread, no "up to you". Run drafts through slopbeth.
+Public text (PR, issue, comment, post): draft first, post only on "pošli". Keep his wording, don't repeat the thread, no "up to you".
 
 ## Commits
 
@@ -71,7 +71,7 @@ Pure config files (ssh config, rc files, dotfiles) do not get the attribution he
 
 **No § Sign:** Never write the paragraph/section sign `§` into files, code, comments, plans, or output. Use `#` instead when referring to sections, items, or numbered points.
 
-**Prose:** every piece of prose you write into a file or public text (docs, README, comments, commits, PR, issue, post) follows slopbeth's writing rules (Orwell, 1946):
+**Prose:** every piece of prose you write into a file or public text (docs, README, comments, commits, PR, issue, post) follows these writing rules (Orwell, 1946):
 1. No printed-cliche metaphors; use a live image or none.
 2. No long word where a short one works (use, not utilize).
 3. Cut every word that can be cut (to, not in order to).

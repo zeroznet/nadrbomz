@@ -7,7 +7,6 @@
 | Diff feels heavy | `/simplify [path]` |
 | Second opinion before merge | `/code-review` |
 | Touched auth, crypto, perms, SQL | `/security-review` |
-| Public text draft (PR, issue, comment, post) | `/slopbeth:slopbeth` |
 | Repo feels tangled | `/ica` |
 | Old repo lags behind newer ones | `/uplift [path]` |
 | Repo, docs or memory hold dead weight | `/lean` |

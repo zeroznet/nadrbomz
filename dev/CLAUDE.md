@@ -71,6 +71,16 @@ Pure config files (ssh config, rc files, dotfiles) do not get the attribution he
 
 **No § Sign:** Never write the paragraph/section sign `§` into files, code, comments, plans, or output. Use `#` instead when referring to sections, items, or numbered points.
 
+**Prose:** every piece of prose you write into a file or public text (docs, README, comments, commits, PR, issue, post) follows slopbeth's writing rules (Orwell, 1946):
+1. No printed-cliche metaphors; use a live image or none.
+2. No long word where a short one works (use, not utilize).
+3. Cut every word that can be cut (to, not in order to).
+4. Active over passive; name the actor unless it is unknown or the register needs agentless.
+5. No jargon or foreign phrase with a plain equivalent.
+6. Break any rule sooner than write something unclear, untrue, or graceless.
+
+Facts, numbers, qualifiers, and Robert's voice outrank all six. Every sentence carries a claim, example, constraint, number, or consequence. Don't invent facts, metrics, owners, or promises the source lacks, and don't polish a vague benefit into a claim. Don't swap slop for a new formula: tidy triads, forced contrast ("not X, but Y"), clipped aphorisms, summary endings, title-case hype headings, decorative bold. Strong text he wrote gets a light edit or none.
+
 ## Behavioral Guidelines
 
 ### 1. Think Before Coding

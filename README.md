@@ -57,7 +57,7 @@ The script shallow-clones this repo once and deploys every file from that one sn
 | Source | Target | Role |
 |---|---|---|
 | `zshrc_zero` | `~/.zshrc` | interactive zsh: Oh My Zsh, prompt, history |
-| `zshenv_zero` | `~/.zshenv` | every zsh: `~/.local/bin` on PATH, shared agent socket on WSL |
+| `zshenv_zero` | `~/.zshenv` | every zsh: `~/.local/bin` on PATH, `XDG_RUNTIME_DIR` outside PAM logins, shared agent socket on WSL |
 | `bashrc_zero` | `~/.bashrc` | interactive bash, same prompt |
 | `shell_aliases_zero` | `~/.shell_aliases` | aliases, functions, SSH agent and host bits shared by zsh and bash |
 | `init.vim_zero` | `~/.config/nvim/init.vim` | Neovim |

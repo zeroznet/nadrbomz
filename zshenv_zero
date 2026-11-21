@@ -1,12 +1,18 @@
 # -----------------------------------------------------------------------------
 # ~/.zshenv
-# Read by every zsh, interactive or not: ~/.local/bin on PATH and the shared
-# ssh-agent socket for local WSL sessions.
+# Read by every zsh, interactive or not: ~/.local/bin on PATH, XDG_RUNTIME_DIR
+# outside PAM logins, and the shared ssh-agent socket for local WSL sessions.
 # -----------------------------------------------------------------------------
 
 typeset -U path PATH
 [[ -d "$HOME/.local/bin" ]] && path+=("$HOME/.local/bin")
 export PATH
+
+# Shells started outside a PAM login (screen, cron, Claude) lack XDG_RUNTIME_DIR;
+# rootless podman then pins its runroot under TMPDIR, on disk, and breaks on reboot.
+if [[ -z "${XDG_RUNTIME_DIR:-}" && -d "/run/user/$UID" ]]; then
+  export XDG_RUNTIME_DIR="/run/user/$UID"
+fi
 
 # Pin SSH_AUTH_SOCK to the fixed socket ssh-key-ensure starts the agent on, so
 # all WT tabs share one agent. SSH logins keep their forwarded agent.
